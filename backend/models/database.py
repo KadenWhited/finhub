@@ -1,0 +1,128 @@
+import sqlite3
+import os
+
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'finance_hub.db')
+
+def get_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+def init_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = get_db()
+    c = conn.cursor()
+
+    # Trades table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coin TEXT NOT NULL,
+            direction TEXT NOT NULL DEFAULT 'long',
+            entry_price REAL NOT NULL,
+            exit_price REAL,
+            position_size REAL NOT NULL,
+            entry_date TEXT NOT NULL,
+            exit_date TEXT,
+            reason TEXT,
+            notes TEXT,
+            status TEXT NOT NULL DEFAULT 'open',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Checkbook table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS checkbook (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            date TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Credit accounts table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS credit_accounts (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              last_four TEXT,
+              credit_limit REAL,
+              balance REAL NOT NULL DEFAULT 0,
+              created_ar TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Credit transactions table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS credit_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            date TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Gambling sessions table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS gambling_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_type TEXT NOT NULL,
+            venue TEXT,
+            buy_in REAL NOT NULL,
+            cash_out REAL NOT NULL,
+            date TEXT NOT NULL,
+            duration_minutes INTEGER,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Daily notes / trading journal
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL UNIQUE,
+            content TEXT NOT NULL,
+            mood TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Settings table (single-row key-value store)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    ''')
+
+    # Future-proof: add source column if it doesn't exist yet
+    for table in ('checkbook', 'credit_transactions', 'trades'):
+        try:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN source TEXT DEFAULT 'manual'")
+        except Exception:
+            pass  # Column already exists
+
+    defaults = [
+        ('starting_capital', '350'),
+        ('currency', 'USD'),
+        ('risk_per_trade_pct', '2'),
+    ]
+    for key, val in defaults:
+        c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
+
+    conn.commit()
+    conn.close()
+    print(f"✅ Database initialized at {DB_PATH}")

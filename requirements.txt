@@ -1,0 +1,10 @@
+flask==3.0.3
+flask-cors==4.0.1
+python-dotenv==1.0.1
+
+# Stage 2
+requests==2.32.3
+
+# Stage 3
+ccxt==4.3.89
+feedparser==6.0.11

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance Hub — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070709; --bg-2: #0e0e14; --bg-3: #15151f;
+      --border: #2a2a3a; --border-bright: #3a3a55;
+      --text: #e8e8f0; --text-2: #9898b0; --text-3: #5a5a72;
+      --green: #00e676; --red: #ff4757;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Syne', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,230,118,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,230,118,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .login-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border-bright);
+      border-radius: 14px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-mark { color: #00e676; font-size: 24px; }
+    .logo-text {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: 0.12em;
+    }
+    label {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 11px 14px;
+      outline: none;
+      margin-bottom: 20px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus {
+      border-color: #00e676;
+      box-shadow: 0 0 0 2px rgba(0,230,118,0.1);
+    }
+    button {
+      width: 100%;
+      background: #00e676;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+    button:hover { background: #00c85a; }
+    .error {
+      color: #ff4757;
+      font-size: 0.75rem;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 20px;
+    }
+    .subtitle {
+      font-size: 0.72rem;
+      color: var(--text-3);
+      margin-bottom: 28px;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="logo">
+      <span class="logo-mark">⬡</span>
+      <span class="logo-text">FINHUB</span>
+    </div>
+    <div class="subtitle">Personal Finance & Trading Hub</div>
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Enter your password" autofocus
+      onkeydown="if(event.key==='Enter') submitLogin()">
+    <button onclick="submitLogin()">Unlock</button>
+    <div class="error" id="error-msg"></div>
+  </div>
+
+  <script>
+    // If already authenticated, go straight to app
+    fetch('/api/auth/check')
+      .then(r => r.json())
+      .then(d => { if (d.authenticated) window.location.href = '/'; });
+
+    async function submitLogin() {
+      const pw = document.getElementById('password').value;
+      if (!pw) return;
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        document.getElementById('error-msg').textContent = 'Incorrect password';
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    }
+  </script>
+</body>
+</html>
