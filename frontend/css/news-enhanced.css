@@ -1,0 +1,52 @@
+/* ============================================
+   NEWS FEED ENHANCEMENTS — append to stage3.css
+   ============================================ */
+
+/* ── NEWS TYPE FILTERS ────────────────────── */
+.news-type-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── RELEVANCE BAR (top accent on cards) ──── */
+.news-relevance-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+.news-relevance-bar.high   { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+.news-relevance-bar.medium { background: var(--yellow); opacity: 0.6; }
+
+/* Make news-card position:relative so bar works */
+.news-card { position: relative; overflow: hidden; }
+
+/* ── PROFILE STRIP ────────────────────────── */
+.news-profile-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 0.72rem;
+}
+
+/* ── VIDEO CARD ───────────────────────────── */
+.news-card:has(.badge[style*="VIDEO"]) {
+  border-left-color: rgba(255, 64, 64, 0.6) !important;
+}
+
+/* ── REDDIT CARD ──────────────────────────── */
+.news-card:has(.badge-gray:not([class*="coin"])) .news-title {
+  color: var(--text);
+}
+
+/* ── UPVOTE INDICATOR ─────────────────────── */
+.news-upvote {
+  font-size: 0.68rem;
+  color: var(--text-3);
+}

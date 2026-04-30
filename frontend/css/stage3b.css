@@ -1,0 +1,78 @@
+/* ============================================
+   STAGE 3B — Sliders, Sentiment Dots, News Strip
+   Append to main.css or stage3.css
+   ============================================ */
+
+/* ── WEIGHT SLIDERS ───────────────────────── */
+.weight-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-4);
+  outline: none;
+  cursor: pointer;
+}
+.weight-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 0 6px rgba(0,230,118,0.4);
+}
+.weight-slider::-webkit-slider-thumb:hover {
+  background: var(--green-dim);
+}
+.weight-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── SENTIMENT DOTS (dashboard news strip) ── */
+.sentiment-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sentiment-dot-positive { background: var(--green); }
+.sentiment-dot-negative { background: var(--red); }
+.sentiment-dot-neutral  { background: var(--text-3); }
+
+/* ── REALIZED / UNREALIZED SPLIT ─────────── */
+.pnl-split-row {
+  display: flex;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.pnl-split-item {
+  flex: 1;
+  text-align: center;
+}
+.pnl-split-label {
+  font-size: 0.62rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+}
+.pnl-split-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ── MOBILE ───────────────────────────────── */
+@media (max-width: 768px) {
+  .weight-slider { height: 6px; }
+  .weight-slider::-webkit-slider-thumb { width: 20px; height: 20px; }
+}

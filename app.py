@@ -29,7 +29,13 @@ from backend.routes.safeguards import safeguards_bp
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
 
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-fallback-change-this')
+secret = os.environ.get('SECRET_KEY')
+if not secret:
+    if os.environ.get('FLASK_ENV') == 'development':
+        secret = 'dev-only-not-for-production'
+    else:
+        raise RuntimeError('SECRET_KEY must be set in .env before running in production')
+app.secret_key = secret
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')

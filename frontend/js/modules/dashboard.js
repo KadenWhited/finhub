@@ -73,7 +73,6 @@ async function renderDashboard() {
 
     <!-- Module cards with sparklines -->
     <div class="dash-modules">
-
       <div class="dash-module" onclick="navigateTo('trades')">
         <div class="module-header">
           <div class="module-title">Trade Journal</div>
@@ -99,6 +98,18 @@ async function renderDashboard() {
         <div class="module-meta">
           <div class="meta-item">In <span style="color:var(--green)">+$${checkbook.total_income.toFixed(0)}</span></div>
           <div class="meta-item">Out <span style="color:var(--red)">-$${checkbook.total_expenses.toFixed(0)}</span></div>
+        </div>
+      </div>
+
+      <div class="dash-module" onclick="navigateTo('budget')">
+        <div class="module-header">
+          <div class="module-title">Budget</div>
+          <span class="module-icon" style="color:var(--yellow)">◈</span>
+        </div>
+        <div id="dash-budget-net" class="module-pnl" style="color:var(--text-3)">—</div>
+        <div class="module-meta">
+          <div class="meta-item">Subscriptions <span id="dash-sub-cost">—</span></div>
+          <div class="meta-item">Fixed/mo <span id="dash-rec-cost">—</span></div>
         </div>
       </div>
 
@@ -166,6 +177,7 @@ async function renderDashboard() {
 
   // Watchlist pill
   _loadDashWatchlistCount();
+  _loadDashBudget();
 }
 
 async function _mountDashSparklines() {
@@ -314,4 +326,24 @@ function _dashFmtAge(h) {
   if (h < 1)  return `${Math.round(h*60)}m`;
   if (h < 24) return `${Math.round(h)}h`;
   return `${Math.round(h/24)}d`;
+}
+
+async function _loadDashBudget() {
+  try {
+    const [summary, recurring] = await Promise.all([
+      api.get('/budget/summary'),
+      api.get('/budget/recurring'),
+    ]);
+    const cur = summary.current_month || {};
+    const net = cur.net || 0;
+    const netEl = document.getElementById('dash-budget-net');
+    const subEl = document.getElementById('dash-sub-cost');
+    const recEl = document.getElementById('dash-rec-cost');
+    if (netEl) {
+      netEl.className = `module-pnl ${net >= 0 ? 'pos' : 'neg'}`;
+      netEl.textContent = `${net >= 0 ? '+' : ''}$${Math.abs(net).toFixed(2)}`;
+    }
+    if (subEl) subEl.textContent = `$${(recurring.subscription_monthly_est||0).toFixed(2)}`;
+    if (recEl) recEl.textContent = `$${(recurring.recurring_monthly_est||0).toFixed(2)}`;
+  } catch (e) { /* ignore — budget is optional */ }
 }

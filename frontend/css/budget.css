@@ -1,0 +1,69 @@
+/* ============================================
+   BUDGET MODULE — append to main.css
+   ============================================ */
+
+/* ── MONTH ROWS ──────────────────────────── */
+.budget-month-row {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.budget-month-row:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-3);
+  transform: translateX(3px);
+}
+
+/* ── RECURRING CARDS ─────────────────────── */
+.recurring-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--yellow);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.recurring-card:hover { border-color: var(--border-bright); }
+
+/* Subscription cards get purple accent */
+.recurring-card:has(span[style*="📱"]) {
+  border-left-color: var(--purple);
+}
+
+/* ── CATEGORY PROGRESS BARS ──────────────── */
+.category-bar-row {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.category-bar-track {
+  height: 4px;
+  background: var(--bg-4);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.category-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--red);
+  opacity: 0.75;
+  transition: width 0.4s ease;
+}
+
+/* ── BUDGET OVERVIEW BOXES ───────────────── */
+.budget-split-box {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-3);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+/* ── MOBILE ──────────────────────────────── */
+@media (max-width: 768px) {
+  .budget-month-row:hover { transform: none; }
+  .recurring-card { padding: 12px 12px; }
+}

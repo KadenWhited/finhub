@@ -9,3 +9,8 @@ yfinance==0.2.54
 # Stage 3
 ccxt==4.3.89
 feedparser==6.0.11
+
+# Stage 4
+pywebpush==1.14.0
+pywin32==306
+gunicorn==21.2.0

@@ -1,10 +1,9 @@
 # ⬡ Finance Hub
 
-A self-hosted personal finance + crypto trading hub. Mobile-friendly, dark terminal aesthetic. Built with Python (Flask) + Vanilla JS.
+A self-hosted personal finance + crypto trading hub built with Python (Flask) + Vanilla JS.
+Tracks crypto trades, checkbook, credit cards, gambling, stocks, budgeting, and news in one place.
 
----
-
-## Quick Start
+## Quick Start (Windows)
 
 ### Mac / Linux
 ```bash

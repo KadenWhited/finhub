@@ -1,0 +1,136 @@
+/* ============================================
+   STAGE 2D — Net Worth Hero, Card Tinting,
+   Interactive States, Strategy Tags
+   Append to frontend/css/main.css
+   ============================================ */
+
+/* ── NET WORTH HERO ──────────────────────────────────── */
+.nw-hero {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 20px;
+  align-items: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.nw-hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00d2ff, #00e676);
+  opacity: 0.7;
+}
+
+.nw-hero.nw-negative::before {
+  background: linear-gradient(90deg, #ff4757, #ff6b6b);
+}
+
+.nw-hero:hover { border-color: rgba(0,210,255,0.4); }
+
+.nw-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 6px;
+}
+
+.nw-value {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.nw-change {
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.nw-hero-chart {
+  height: 80px;
+  width: 100%;
+}
+
+.nw-hero-chart canvas {
+  display: block;
+  width: 100% !important;
+}
+
+/* ── CHART CARD NEGATIVE TINT ───────────────────────── */
+.chart-card-negative {
+  border-color: rgba(255, 71, 87, 0.2) !important;
+  background: linear-gradient(180deg, rgba(255,71,87,0.03) 0%, var(--bg-2) 40%);
+}
+
+.chart-card-negative .chart-title {
+  color: rgba(255,255,255,0.85);
+}
+
+/* ── INTERACTIVE STAT CARDS ─────────────────────────── */
+.stat-card[style*="cursor:pointer"]:hover,
+.stat-card[onclick]:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+  cursor: pointer;
+}
+
+/* ── CATEGORY CHART HOVER ───────────────────────────── */
+.cat-chart-item {
+  cursor: pointer;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.cat-chart-item:hover {
+  border-color: var(--border);
+  background: var(--bg-3);
+}
+
+/* ── STRATEGY TAG BADGES ────────────────────────────── */
+.strategy-tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(167,139,250,0.12);
+  color: var(--purple);
+  border: 1px solid rgba(167,139,250,0.25);
+  margin-right: 4px;
+  margin-bottom: 2px;
+}
+
+.tag-breakout   { background: rgba(0,210,255,0.1);  color: var(--cyan);   border-color: rgba(0,210,255,0.25); }
+.tag-bounce     { background: rgba(0,230,118,0.1);  color: var(--green);  border-color: rgba(0,230,118,0.25); }
+.tag-trend      { background: rgba(167,139,250,0.1);color: var(--purple); border-color: rgba(167,139,250,0.25); }
+.tag-reversal   { background: rgba(255,71,87,0.1);  color: var(--red);    border-color: rgba(255,71,87,0.25); }
+.tag-scalp      { background: rgba(255,211,42,0.1); color: var(--yellow); border-color: rgba(255,211,42,0.25); }
+.tag-news       { background: rgba(255,159,67,0.1); color: #ff9f43;       border-color: rgba(255,159,67,0.25); }
+
+/* ── GAMBLING STREAK BADGE ──────────────────────────── */
+.badge-streak-win  { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.badge-streak-loss { background: rgba(255,71,87,0.15);  color: var(--red);   border: 1px solid rgba(255,71,87,0.3); }
+
+/* ── MOBILE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nw-hero {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .nw-hero-chart { display: none; } /* hide sparkline on mobile hero to save space */
+  .nw-value { font-size: 2rem; }
+}

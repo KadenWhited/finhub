@@ -1,0 +1,267 @@
+/* ============================================
+   STAGE 2 — MARKET MODULE STYLES
+   Append to frontend/css/main.css
+   ============================================ */
+
+/* ---- MARKET TABS ---- */
+.market-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  width: fit-content;
+}
+
+.market-tab {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+.market-tab:hover { color: var(--text); background: var(--bg-3); }
+.market-tab.active { background: var(--bg-4); color: var(--text); }
+
+/* ---- COIN CARDS (watchlist grid) ---- */
+.coin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.coin-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.coin-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.coin-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.coin-card:hover::before { background: var(--accent); }
+
+.coin-card-alert { border-color: rgba(255,211,42,0.3); }
+.coin-card-alert::before { background: var(--yellow) !important; }
+.coin-card-error { opacity: 0.6; }
+
+.coin-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.coin-sym {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.coin-name {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.coin-price {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.coin-alert {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.coin-alert-up {
+  background: rgba(0,230,118,0.12);
+  color: var(--green);
+  border: 1px solid rgba(0,230,118,0.3);
+}
+
+.coin-alert-down {
+  background: rgba(255,71,87,0.12);
+  color: var(--red);
+  border: 1px solid rgba(255,71,87,0.3);
+}
+
+.coin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.coin-stat {
+  background: var(--bg-3);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.coin-stat-label {
+  font-size: 0.58rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.coin-stat-val {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.coin-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- MOVERS TICKER BAR ---- */
+.movers-ticker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  overflow: hidden;
+}
+
+.movers-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.movers-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.movers-scroll::-webkit-scrollbar { display: none; }
+
+.mover-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mover-up {
+  background: rgba(0,230,118,0.1);
+  border: 1px solid rgba(0,230,118,0.25);
+  color: var(--green);
+}
+
+.mover-down {
+  background: rgba(255,71,87,0.1);
+  border: 1px solid rgba(255,71,87,0.25);
+  color: var(--red);
+}
+
+.mover-sym { font-weight: 700; }
+.mover-pct {}
+
+/* ---- MOVER ROWS (movers tab) ---- */
+.mover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  transition: all 0.15s;
+}
+.mover-row:hover { border-color: var(--border-bright); background: var(--bg-3); }
+
+/* ---- ALERT DOT ---- */
+.alert-dot {
+  font-size: 8px;
+  margin-left: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.alert-dot.up { color: var(--green); }
+.alert-dot.down { color: var(--red); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---- SEARCH RESULTS ---- */
+.search-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid var(--border);
+}
+.search-result-row:last-child { border-bottom: none; }
+.search-result-row:hover { background: var(--bg-3); }
+
+/* ---- MARKET RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .coin-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .coin-price { font-size: 1.1rem; }
+  .market-tabs { width: 100%; }
+  .market-tab { flex: 1; text-align: center; padding: 8px 8px; }
+
+  /* Movers tab: stack columns */
+  #market-tab-content [style*="grid-template-columns:1fr 1fr"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .coin-grid { grid-template-columns: 1fr; }
+  .coin-stats { grid-template-columns: repeat(3, 1fr); }
+}

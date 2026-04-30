@@ -1,0 +1,193 @@
+/* ============================================
+   STAGE 3 — Backtester, News, Safeguards
+   Append to frontend/css/main.css
+   ============================================ */
+
+/* ── BACKTESTER LAYOUT ───────────────────── */
+.bt-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.bt-config {
+  position: sticky;
+  top: 20px;
+}
+
+.bt-results {
+  min-height: 300px;
+}
+
+.bt-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-3);
+}
+
+.bt-running {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ── BACKTEST GRADE ──────────────────────── */
+.bt-grade {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 2px solid;
+}
+.bt-grade-a { color: var(--green);  border-color: var(--green);  background: rgba(0,230,118,0.1); }
+.bt-grade-b { color: var(--cyan);   border-color: var(--cyan);   background: rgba(0,210,255,0.1); }
+.bt-grade-c { color: var(--yellow); border-color: var(--yellow); background: rgba(255,211,42,0.1); }
+.bt-grade-d { color: #ff9f43;       border-color: #ff9f43;       background: rgba(255,159,67,0.1); }
+.bt-grade-f { color: var(--red);    border-color: var(--red);    background: rgba(255,71,87,0.1); }
+
+.bt-grade-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── NEWS FEED ───────────────────────────── */
+.news-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.news-card:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-3);
+  transform: translateX(3px);
+}
+
+.news-positive { border-left-color: var(--green) !important; }
+.news-negative { border-left-color: var(--red)   !important; }
+.news-neutral  { border-left-color: var(--border) !important; }
+
+.news-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.news-source {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.news-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.news-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.news-summary {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.news-date {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ── SENTIMENT BAR ───────────────────────── */
+.sentiment-overview {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+
+.sentiment-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 2px;
+}
+.sentiment-seg { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.seg-pos { background: var(--green); }
+.seg-neu { background: var(--border-bright); }
+.seg-neg { background: var(--red); }
+
+/* ── NEWS FILTER PILLS ───────────────────── */
+.news-filter-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.news-filter-pill:hover { color: var(--text); border-color: var(--border-bright); }
+.news-filter-pill.active {
+  background: var(--green-glow);
+  border-color: rgba(0,230,118,0.3);
+  color: var(--green);
+}
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 768px) {
+  .bt-layout {
+    grid-template-columns: 1fr;
+  }
+  .bt-config { position: relative; top: auto; }
+  .news-card { padding: 12px 14px; }
+  .news-card:hover { transform: none; }
+  .sentiment-overview { padding: 12px 14px; }
+}

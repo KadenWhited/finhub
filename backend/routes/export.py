@@ -69,8 +69,14 @@ def export_csv(table):
 def import_json():
     """Restore from a full JSON export. Merges — does not wipe existing data."""
     data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    if not data or not isinstance(data, dict):
+        return jsonify({'error': 'Invalid JSON'}), 400
+    
+    allowed_keys = {'trades','checkbook','gambling_sessions','credit_accounts','credit_transactions','settings','exported_at'}
+    unexpected = set(data.keys()) - allowed_keys
+
+    if unexpected:
+        return jsonify({'error': f'Unexpected keys: {unexpected}'}), 400
 
     db = get_db()
     imported = {'trades': 0, 'checkbook': 0, 'gambling': 0, 'credit_accounts': 0, 'credit_transactions': 0}
