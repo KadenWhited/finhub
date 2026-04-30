@@ -31,7 +31,7 @@ def init_db():
             notes TEXT,
             status TEXT NOT NULL DEFAULT 'open',
             created_at TEXT DEFAULT (datetime('now')),
-            source TEXT DEFAULT 'manual',
+            source TEXT DEFAULT 'manual'
         )
     ''')
 
