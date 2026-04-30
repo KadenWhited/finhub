@@ -117,6 +117,58 @@ function renderSettingsView(el, s) {
         </div>
       </div>
 
+      <!-- News Feed Weight Customization -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">News Feed Personalization Weights</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:16px;line-height:1.6">
+          Control how the ranking algorithm weighs each factor.
+          Higher value = that factor matters more. Values auto-normalize to 100%.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${[
+            ['news_weight_recency',        'Recency',           'How recent the article is',           40],
+            ['news_weight_coin_relevance', 'Coin Relevance',    'Mentions your watchlist/traded coins', 30],
+            ['news_weight_strategy_align', 'Strategy Fit',      'Matches your trading style',          15],
+            ['news_weight_level_match',    'Experience Level',  'Matches beginner/intermediate/advanced',10],
+            ['news_weight_content_type',   'Content Type',      'News vs education vs analysis',        5],
+          ].map(([key, label, desc, defaultVal]) => `
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <div>
+                  <div style="font-size:0.78rem;color:var(--text)">${label}</div>
+                  <div style="font-size:0.68rem;color:var(--text-3)">${desc}</div>
+                </div>
+                <span id="${key}_display" style="font-size:0.82rem;color:var(--accent);font-weight:600;min-width:36px;text-align:right">
+                  \${s.${key} || ${defaultVal}}
+                </span>
+              </div>
+              <input type="range" id="${key}" class="weight-slider"
+                min="0" max="80" step="5"
+                value="\${s.${key} || ${defaultVal}}"
+                oninput="document.getElementById('${key}_display').textContent=this.value">
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:0.68rem;color:var(--text-3);margin-top:10px">
+          Values auto-normalize — setting Recency to 80 doesn't break other factors.
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Price Alert Notifications</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+          Desktop notifications when watched coins move beyond your alert threshold.
+          Requires <code style="background:var(--bg-3);padding:1px 5px;border-radius:3px">pip install plyer</code> for system notifications.
+        </div>
+        <div id="alert-status-display" style="margin-bottom:14px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="testNotification()">🔔 Send Test Alert</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearAlertCooldowns()">↺ Reset Cooldowns</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadAlertStatus()">↻ Refresh Status</button>
+        </div>
+      </div>
+
       <!-- Data Management -->
       <div class="card">
         <div class="card-title" style="margin-bottom:14px">Data Management</div>
@@ -181,6 +233,11 @@ async function saveSettings() {
     max_daily_loss_pct: document.getElementById('s-maxloss').value,
     preferred_trade_duration: document.getElementById('s-duration').value,
     alert_threshold_pct: document.getElementById('s-alert').value,
+    news_weight_recency:        document.getElementById('news_weight_recency')?.value,
+    news_weight_coin_relevance: document.getElementById('news_weight_coin_relevance')?.value,
+    news_weight_strategy_align: document.getElementById('news_weight_strategy_align')?.value,
+    news_weight_level_match:    document.getElementById('news_weight_level_match')?.value,
+    news_weight_content_type:   document.getElementById('news_weight_content_type')?.value,
   };
 
   const missing = Object.entries(body).filter(([k, v]) => !v);
@@ -208,4 +265,53 @@ async function handleImport(event) {
     showToast('Import failed: ' + e.message, 'error');
   }
   event.target.value = '';
+}
+
+async function loadAlertStatus() {
+  try {
+    const status = await api.get('/alerts/status');
+    const el = document.getElementById('alert-status-display');
+    if (!el) return;
+
+    const recent = Object.entries(status.last_alerts || {})
+      .map(([coin, ts]) => `${coin.toUpperCase().substring(0,8)}: ${new Date(ts).toLocaleTimeString()}`)
+      .join(', ');
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${status.running?'var(--green)':'var(--red)'}"></div>
+        <span style="font-size:0.78rem;color:${status.running?'var(--green)':'var(--text-3)'}">
+          ${status.running ? 'Alert thread running' : 'Alert thread not running'}
+        </span>
+      </div>
+      ${recent ? `<div style="font-size:0.7rem;color:var(--text-3)">Recent alerts: ${recent}</div>` : ''}
+      <div style="font-size:0.7rem;color:var(--text-3)">Cooldown: ${status.cooldown_hours}h between same-coin alerts</div>
+    `;
+  } catch (e) {
+    const el = document.getElementById('alert-status-display');
+    if (el) el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Alert service unavailable</div>`;
+  }
+}
+
+async function testNotification() {
+  try {
+    const result = await api.post('/alerts/test', {});
+    if (result.sent) {
+      showToast('Test notification sent ✓', 'success');
+    } else {
+      showToast('plyer not installed — run: pip install plyer', 'error');
+    }
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function clearAlertCooldowns() {
+  try {
+    await api.post('/alerts/clear', {});
+    showToast('Alert cooldowns reset ✓', 'success');
+    loadAlertStatus();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }

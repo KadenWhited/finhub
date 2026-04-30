@@ -68,6 +68,9 @@ async function renderDashboard() {
       </div>
     </div>
 
+    <!-- Top news strip -->
+    <div id="dash-news-strip" style="margin-bottom:20px"></div>
+
     <!-- Module cards with sparklines -->
     <div class="dash-modules">
 
@@ -180,6 +183,7 @@ async function _mountDashSparklines() {
     if (gambChart?.cumulative_pnl?.length > 1)
       _spark('dash-spark-gamble', gambChart.cumulative_pnl);
   } catch (e) { /* sparklines optional */ }
+  loadDashNewsStrip()
 }
 
 function _spark(id, points, color) {
@@ -262,4 +266,52 @@ async function openCreditTrendChart() {
       { label: 'Balance', color: '#ff4757', points: data.balance || [] }
     ], 'all', 240);
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function loadDashNewsStrip() {
+  const el = document.getElementById('dash-news-strip');
+  if (!el) return;
+  try {
+    const data = await api.get('/news/?limit=4');
+    const articles = (data.articles || []).slice(0, 4);
+    if (!articles.length) { el.innerHTML = ''; return; }
+
+    el.innerHTML = `
+      <div class="card" style="padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin:0">Top Headlines</div>
+          <button class="btn btn-ghost btn-sm" onclick="navigateTo('news')" style="font-size:0.7rem">View all →</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${articles.map(a => `
+            <a href="${a.link}" target="_blank" rel="noopener noreferrer"
+              style="display:flex;justify-content:space-between;align-items:center;gap:12px;
+                     padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;
+                     color:var(--text);transition:color 0.15s"
+              onmouseover="this.style.color='var(--accent)'"
+              onmouseout="this.style.color='var(--text)'">
+              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+                <div class="sentiment-dot sentiment-dot-${a.sentiment}"></div>
+                <span style="font-size:0.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                  ${a.title}
+                </span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                <span style="font-size:0.65rem;color:var(--text-3)">${a.source}</span>
+                <span style="font-size:0.65rem;color:var(--text-3)">${_dashFmtAge(a.age_hours)}</span>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } catch (e) { el.innerHTML = ''; }
+}
+
+function _dashFmtAge(h) {
+  if (!h && h !== 0) return '';
+  h = parseFloat(h);
+  if (h < 1)  return `${Math.round(h*60)}m`;
+  if (h < 24) return `${Math.round(h)}h`;
+  return `${Math.round(h/24)}d`;
 }

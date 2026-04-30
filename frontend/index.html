@@ -8,9 +8,12 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/market.css">
+  <link rel="stylesheet" href="/css/budget.css">
   <link rel="stylesheet" href="/css/charts.css">
   <link rel="stylesheet" href="/css/stage2c.css">
   <link rel="stylesheet" href="/css/stage2d.css">
+  <link rel="stylesheet" href="/css/stage3.css">
+  <link rel="stylesheet" href="/css/news-enhanced.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,14 +33,17 @@
         <li><a href="#" data-page="dashboard" class="nav-link active">
           <span class="nav-icon">◈</span><span class="nav-label">Dashboard</span>
         </a></li>
-        <li><a href="#" data-page="trades" class="nav-link">
-          <span class="nav-icon">◇</span><span class="nav-label">Trade Journal</span>
-        </a></li>
         <li><a href="#" data-page="checkbook" class="nav-link">
           <span class="nav-icon">◻</span><span class="nav-label">Checkbook</span>
         </a></li>
         <li><a href="#" data-page="credit" class="nav-link">
           <span class="nav-icon">▣</span><span class="nav-label">Credit</span>
+        </a></li>
+        <li><a href="#" data-page="budget" class="nav-link">
+          <span class="nav-icon">◈</span><span class="nav-label">Budget</span>
+        </a></li>
+                <li><a href="#" data-page="trades" class="nav-link">
+          <span class="nav-icon">◇</span><span class="nav-label">Trade Journal</span>
         </a></li>
         <li><a href="#" data-page="market" class="nav-link">
           <span class="nav-icon">◉</span><span class="nav-label">Market</span>
@@ -56,6 +62,12 @@
         </a></li>
         <li><a href="#" data-page="notes" class="nav-link">
           <span class="nav-icon">≡</span><span class="nav-label">Journal</span>
+        </a></li>
+        <li><a href="#" data-page="backtester" class="nav-link">
+          <span class="nav-icon">◈</span><span class="nav-label">Backtester</span>
+        </a></li>
+        <li><a href="#" data-page="news" class="nav-link">
+          <span class="nav-icon">≋</span><span class="nav-label">News</span>
         </a></li>
         <li><a href="#" data-page="settings" class="nav-link">
           <span class="nav-icon">⊙</span><span class="nav-label">Settings</span>
@@ -81,6 +93,10 @@
         <span class="mob-icon">◉</span>
         <span>Market</span>
       </a>
+      <a href="#" data-page="budget" class="mob-link">
+        <span class="mob-icon">◈</span>
+        <span>Budget</span>
+      </a>
       <a href="#" data-page="charts" class="mob-link">
         <span class="mob-icon">╱</span>
         <span>Charts</span>
@@ -99,15 +115,18 @@
     <!-- Main content -->
     <main id="main-content">
       <div id="page-dashboard" class="page active"></div>
-      <div id="page-trades" class="page"></div>
       <div id="page-checkbook" class="page"></div>
       <div id="page-credit" class="page"></div>
+      <div id="page-budget" class="page"></div>
+      <div id="page-trades" class="page"></div>
       <div id="page-market" class="page"></div>
       <div id="page-stocks" class="page"></div>
       <div id="page-charts" class="page"></div>
       <div id="page-gambling" class="page"></div>
       <div id="page-tools" class="page"></div>
       <div id="page-notes" class="page"></div>
+      <div id="page-backtester" class="page"></div>
+      <div id="page-news" class="page"></div>
       <div id="page-settings" class="page"></div>
     </main>
 
@@ -132,9 +151,12 @@
   <script src="/js/modules/trades.js"></script>
   <script src="/js/modules/checkbook.js"></script>
   <script src="/js/modules/credit.js"></script>
+  <script src="/js/modules/budget.js"></script>
   <script src="/js/modules/market.js"></script>
   <script src="/js/modules/gambling.js"></script>
   <script src="/js/modules/notes.js"></script>
+  <script src="/js/modules/backtester.js"></script>
+  <script src="/js/modules/news.js"></script>
   <script src="/js/modules/settings.js"></script>
   <script src="/js/modules/tools.js"></script>
   <script src="/js/modules/charts-view.js"></script>

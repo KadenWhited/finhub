@@ -185,6 +185,12 @@ def init_db():
     ]:
         c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
 
+    for key, val in [
+        ('revenge_trade_threshold', '3'),
+        ('revenge_cooldown_hours',  '24'),
+    ]:
+        c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
+
     conn.commit()
     conn.close()
     print(f"✅ Database initialized at {DB_PATH}")
