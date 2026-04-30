@@ -55,7 +55,7 @@ def init_db():
               last_four TEXT,
               credit_limit REAL,
               balance REAL NOT NULL DEFAULT 0,
-              created_ar TEXT DEFAULT (datetime('now'))
+              created_at TEXT DEFAULT (datetime('now'))
         )
     ''')
 

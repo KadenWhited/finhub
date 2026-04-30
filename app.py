@@ -49,7 +49,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 @app.before_request
 def check_auth():
     # Allow auth endpoints and static files through always
-    open_paths = ['/api/auth/', '/css/', '/js/', '/assets/', '/manifest.json']
+    open_paths = ['/api/auth/', '/css/', '/js/', '/assets/', '/manifest.json', '/login']
     if any(request.path.startswith(p) for p in open_paths):
         return None
 

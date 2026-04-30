@@ -4,19 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Finance Hub</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/market.css">
   <link rel="stylesheet" href="/css/charts.css">
   <link rel="stylesheet" href="/css/stage2c.css">
   <link rel="stylesheet" href="/css/stage2d.css">
-
-  <meta name="theme-color" content="#0a0a0f">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0f">
 </head>
 <body>
   <div id="app">
@@ -63,7 +62,7 @@
         </a></li>
       </ul>
       <div class="sidebar-footer">
-        <span class="version">v1.0 — Stage 1</span>
+        <span class="version">v2.0 — Stage 2</span>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%" onclick="logOut()">Sign Out</button>
       </div>
     </nav>
@@ -78,20 +77,13 @@
         <span class="mob-icon">◇</span>
         <span>Trades</span>
       </a>
-      <a href="#" data-page="checkbook" class="mob-link">
-        <span class="mob-icon">◻</span>
-        <span>Money</span>
-      </a>
-      <li><a href="#" data-page="credit" class="nav-link">
-        <span class="nav-icon">▣</span><span class="nav-label">Credit</span>
-      </a></li>
       <a href="#" data-page="market" class="mob-link">
         <span class="mob-icon">◉</span>
         <span>Market</span>
       </a>
-      <a href="#" data-page="gambling" class="mob-link">
-        <span class="mob-icon">◈</span>
-        <span>Gamble</span>
+      <a href="#" data-page="charts" class="mob-link">
+        <span class="mob-icon">╱</span>
+        <span>Charts</span>
       </a>
       <a href="#" data-page="settings" class="mob-link">
         <span class="mob-icon">⊙</span>
@@ -112,11 +104,11 @@
       <div id="page-credit" class="page"></div>
       <div id="page-market" class="page"></div>
       <div id="page-stocks" class="page"></div>
+      <div id="page-charts" class="page"></div>
       <div id="page-gambling" class="page"></div>
+      <div id="page-tools" class="page"></div>
       <div id="page-notes" class="page"></div>
       <div id="page-settings" class="page"></div>
-      <div id="page-tools" class="page"></div>
-      <div id="page-charts" class="page"></div>
     </main>
 
   </div>
@@ -132,8 +124,10 @@
   <!-- Toast notification -->
   <div id="toast"></div>
 
+  <!-- Scripts — order matters -->
   <script src="/js/api.js"></script>
   <script src="/js/utils.js"></script>
+  <script src="/js/chart-engine.js"></script>
   <script src="/js/modules/dashboard.js"></script>
   <script src="/js/modules/trades.js"></script>
   <script src="/js/modules/checkbook.js"></script>
@@ -143,8 +137,6 @@
   <script src="/js/modules/notes.js"></script>
   <script src="/js/modules/settings.js"></script>
   <script src="/js/modules/tools.js"></script>
-  <script src="/js/modules/market.js"></script>
-  <script src="/js/chart-engine.js"></script>
   <script src="/js/modules/charts-view.js"></script>
   <script src="/js/modules/stocks.js"></script>
   <script src="/js/app.js"></script>
