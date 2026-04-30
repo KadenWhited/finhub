@@ -169,6 +169,55 @@ function renderSettingsView(el, s) {
         </div>
       </div>
 
+      <!-- PWA & Mobile -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">Mobile & Notifications</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+          Install FinHub to your phone home screen and enable push notifications
+          for price alerts that work even when the app is closed.
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+
+          <!-- Install to home screen -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:0.82rem;color:var(--text)">Install to Home Screen</div>
+              <div style="font-size:0.7rem;color:var(--text-3)">Works like a native app, no app store needed</div>
+            </div>
+            <button id="pwa-install-btn" class="btn btn-primary btn-sm" onclick="promptInstall()" style="display:none">
+              Install
+            </button>
+            <span id="pwa-installed-badge" style="display:none;font-size:0.72rem;color:var(--green)">✓ Installed</span>
+          </div>
+
+          <!-- Push notifications -->
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:0.82rem;color:var(--text)">Push Notifications</div>
+                <div style="font-size:0.7rem;color:var(--text-3)">Price alerts sent to your device</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" onclick="enablePushNotifications()">Enable</button>
+                <button class="btn btn-ghost btn-sm" onclick="disablePushNotifications()">Disable</button>
+              </div>
+            </div>
+            <div id="push-status-display" style="margin-top:8px"></div>
+          </div>
+
+          <!-- Test push -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+            <div>
+              <div style="font-size:0.82rem;color:var(--text)">Test Push Notification</div>
+              <div style="font-size:0.7rem;color:var(--text-3)">Send a test to all subscribed devices</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="sendTestPush()">Send Test</button>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Data Management -->
       <div class="card">
         <div class="card-title" style="margin-bottom:14px">Data Management</div>
@@ -195,6 +244,13 @@ function renderSettingsView(el, s) {
 
     </div>
   `;
+
+  loadPushStatus();
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('pwa-installed-badge').style.display = 'inline';
+  } else {
+    document.getElementById('pwa-install-btn').style.display = _installPrompt ? 'block' : 'none';
+  }
 }
 
 function exportRow(label, sub, href) {
@@ -294,14 +350,19 @@ async function loadAlertStatus() {
 }
 
 async function testNotification() {
+  showToast('Sending test to all channels...', '');
   try {
     const result = await api.post('/alerts/test', {});
-    if (result.sent) {
-      showToast('Test notification sent ✓', 'success');
-    } else {
-      showToast('plyer not installed — run: pip install plyer', 'error');
-    }
-  } catch (e) {
+    const r = result.results || {};
+    const lines = [
+      `Desktop: ${r.desktop  ? '✓' : '✗'}`,
+      `Telegram: ${r.telegram ? '✓' : '✗'}`,
+      `ntfy:     ${r.ntfy    ? '✓' : '✗'}`,
+      `Web push: ${r.push    ? '✓' : '✗'}`,
+    ];
+    showToast(lines.join('  ·  '), result.sent ? 'success' : 'error');
+    console.log('Alert test results:', r);
+  } catch(e) {
     showToast(e.message, 'error');
   }
 }
@@ -314,4 +375,62 @@ async function clearAlertCooldowns() {
   } catch (e) {
     showToast(e.message, 'error');
   }
+}
+
+async function enablePushNotifications() {
+  const granted = await requestPushPermission();
+  if (!granted) return;
+  const sub = await subscribeToPush();
+  if (sub) loadPushStatus();
+}
+
+async function disablePushNotifications() {
+  await unsubscribeFromPush();
+  loadPushStatus();
+}
+
+async function loadPushStatus() {
+  const el = document.getElementById('push-status-display');
+  if (!el) return;
+  try {
+    const status = await getPushStatus();
+    const serverStatus = await api.get('/push/status').catch(() => ({}));
+
+    if (!status.supported) {
+      el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Push notifications not supported in this browser</div>`;
+      return;
+    }
+    if (!status.vapid_configured || !serverStatus.vapid_configured) {
+      el.innerHTML = `
+        <div style="font-size:0.72rem;color:var(--yellow)">
+          ⚠ VAPID keys not configured — push notifications require server-side setup.
+          <a href="/DEPLOYMENT.md" target="_blank" style="color:var(--accent)">See DEPLOYMENT.md</a>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${status.subscribed?'var(--green)':'var(--text-3)'}"></div>
+        <span style="font-size:0.75rem;color:${status.subscribed?'var(--green)':'var(--text-3)'}">
+          ${status.subscribed ? 'Subscribed on this device' : 'Not subscribed on this device'}
+        </span>
+        <span style="font-size:0.68rem;color:var(--text-3)">
+          · ${serverStatus.subscriptions || 0} total subscriptions
+        </span>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-3);margin-top:4px">
+        Permission: ${status.permission}
+      </div>`;
+  } catch (e) {
+    if (el) el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Push status unavailable</div>`;
+  }
+}
+
+async function sendTestPush() {
+  try {
+    const result = await api.post('/push/test', {});
+    if (result.sent > 0) showToast(`Test push sent to ${result.sent} device(s) ✓`, 'success');
+    else showToast(result.error || 'No subscribed devices', 'error');
+  } catch (e) { showToast(e.message, 'error'); }
 }

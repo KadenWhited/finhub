@@ -30,7 +30,8 @@ def init_db():
             reason TEXT,
             notes TEXT,
             status TEXT NOT NULL DEFAULT 'open',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            source TEXT DEFAULT 'manual',
         )
     ''')
 
@@ -190,6 +191,61 @@ def init_db():
         ('revenge_cooldown_hours',  '24'),
     ]:
         c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
+
+    alert_defaults = {
+        # Channel routing matrix
+        'alert_channel_high_desktop':    '1',
+        'alert_channel_high_telegram':   '1',
+        'alert_channel_high_ntfy':       '1',
+        'alert_channel_high_push':       '1',
+        'alert_channel_medium_desktop':  '1',
+        'alert_channel_medium_telegram': '1',
+        'alert_channel_medium_ntfy':     '1',
+        'alert_channel_medium_push':     '0',
+        'alert_channel_low_desktop':     '1',
+        'alert_channel_low_telegram':    '0',
+        'alert_channel_low_ntfy':        '0',
+        'alert_channel_low_push':        '0',
+        # Alert type toggles and min priority
+        'alert_type_price_move_enabled':           '1',
+        'alert_type_price_move_min_priority':      'low',
+        'alert_type_volume_spike_enabled':         '1',
+        'alert_type_volume_spike_min_priority':    'medium',
+        'alert_type_rsi_extreme_enabled':          '1',
+        'alert_type_rsi_extreme_min_priority':     'medium',
+        'alert_type_news_sentiment_enabled':       '1',
+        'alert_type_news_sentiment_min_priority':  'low',
+        'alert_type_strategy_signal_enabled':      '1',
+        'alert_type_strategy_signal_min_priority': 'high',
+        'alert_type_balance_low_enabled':          '1',
+        'alert_type_balance_low_min_priority':     'high',
+        'alert_type_large_transaction_enabled':    '1',
+        'alert_type_large_transaction_min_priority': 'medium',
+        'alert_type_credit_utilization_enabled':   '1',
+        'alert_type_credit_utilization_min_priority': 'medium',
+        'alert_type_credit_charge_enabled':        '1',
+        'alert_type_credit_charge_min_priority':   'low',
+        'alert_type_daily_summary_enabled':        '1',
+        'alert_type_daily_summary_min_priority':   'low',
+        # Thresholds
+        'alert_threshold_pct':           '5',
+        'alert_checkbook_min_balance':   '100',
+        'alert_large_tx_threshold':      '100',
+        'alert_credit_utilization_pct':  '80',
+        'alert_credit_charge_threshold': '200',
+        'alert_daily_summary_time':      '08:00',
+    }
+    for key, val in alert_defaults.items():
+        c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
+
+    c.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_checkbook_dedup
+        ON checkbook(date, amount, description, type)
+    ''')
+    c.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_dedup
+        ON credit_transactions(date, amount, description, account_id)
+    ''')
 
     conn.commit()
     conn.close()

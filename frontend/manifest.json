@@ -1,10 +1,52 @@
 {
-  "name": "Finance Hub",
+  "name": "FinHub — Finance Dashboard",
   "short_name": "FinHub",
-  "description": "Personal finance & crypto trading hub",
+  "description": "Personal finance, crypto trading, and budget hub",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#070709",
-  "theme_color": "#0a0a0f",
-  "orientation": "portrait-primary"
+  "theme_color": "#070709",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Trade",
+      "short_name": "Trade",
+      "description": "Open trade journal",
+      "url": "/#trades",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Market Prices",
+      "short_name": "Market",
+      "description": "Live crypto prices",
+      "url": "/#market",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "News Feed",
+      "short_name": "News",
+      "description": "Crypto news and sentiment",
+      "url": "/#news",
+      "icons": [{ "src": "/assets/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }

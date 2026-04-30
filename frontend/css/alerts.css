@@ -1,0 +1,67 @@
+/* ============================================
+   ALERT SETTINGS — toggle switches + matrix
+   Append to main.css
+   ============================================ */
+
+/* ── TOGGLE SWITCH ───────────────────────── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-4);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-3);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: rgba(0, 230, 118, 0.2);
+  border-color: rgba(0, 230, 118, 0.4);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  background: var(--green);
+  transform: translateX(16px);
+}
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
+}
+
+/* ── ALERT MATRIX TABLE ──────────────────── */
+#alert-settings-card table th,
+#alert-settings-card table td {
+  white-space: nowrap;
+}
+
+/* Tier color accents on matrix rows */
+#alert-settings-card table tr:nth-child(1) td:first-child { color: var(--red);    }
+#alert-settings-card table tr:nth-child(2) td:first-child { color: var(--yellow); }
+#alert-settings-card table tr:nth-child(3) td:first-child { color: var(--cyan);   }
+
+/* ── MOBILE ──────────────────────────────── */
+@media (max-width: 640px) {
+  #alert-settings-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

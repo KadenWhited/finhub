@@ -19,12 +19,14 @@ from backend.routes.notes import notes_bp
 from backend.routes.news import news_bp
 from backend.routes.settings import settings_bp
 from backend.routes.tools import tools_bp
+from backend.routes.push import push_bp
 
 # Non Visible
 from backend.routes.export import export_bp
 from backend.routes.charts import charts_bp
 from backend.routes.backtester import backtester_bp
 from backend.routes.safeguards import safeguards_bp
+from backend.routes.alerts import alerts_bp
 
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
@@ -55,6 +57,8 @@ app.register_blueprint(export_bp, url_prefix='/api/export')
 app.register_blueprint(charts_bp, url_prefix='/api/charts')
 app.register_blueprint(backtester_bp, url_prefix='/api/backtester')
 app.register_blueprint(safeguards_bp, url_prefix='/api/safeguards')
+app.register_blueprint(push_bp, url_prefix='/api/push')
+app.register_blueprint(alerts_bp, url_prefix='/api/alerts')
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True

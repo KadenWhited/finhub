@@ -101,4 +101,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial page
   renderDashboard();
+  initPWA();
 });

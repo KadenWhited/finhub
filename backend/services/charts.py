@@ -109,6 +109,7 @@ def get_stock_chart(ticker: str, range_key: str = '1m'):
 
     try:
         import yfinance as yf
+        import pandas as pd
         cfg = STOCK_RANGE_MAP.get(range_key, STOCK_RANGE_MAP['1m'])
         hist = yf.Ticker(ticker).history(period=cfg['period'], interval=cfg['interval'])
 
@@ -117,8 +118,7 @@ def get_stock_chart(ticker: str, range_key: str = '1m'):
 
         points = []
         for ts, row in hist.iterrows():
-            # Convert pandas Timestamp to milliseconds
-            t_ms = int(ts.timestamp() * 1000)
+            t_ms = int(ts.to_pydatetime().timestamp() * 1000)  # type: ignore
             points.append({'t': t_ms, 'v': round(float(row['Close']), 4)})
 
         # For 6h: slice last 6h
