@@ -123,6 +123,68 @@ def init_db():
     for key, val in defaults:
         c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
 
+    # Stage 2 — Watchlist
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS watchlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coin_id TEXT NOT NULL UNIQUE,
+            symbol TEXT NOT NULL,
+            name TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            added_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Stock watchlist
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS stock_watchlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            added_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Stock positions
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS stock_positions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker TEXT NOT NULL,
+            name TEXT,
+            shares REAL NOT NULL,
+            avg_cost REAL NOT NULL,
+            purchase_date TEXT NOT NULL,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Strategy/tags/source columns — safe on existing DB
+    for col, default in [
+        ('strategy', 'general'),
+        ('tags', ''),
+        ('source', 'manual'),
+    ]:
+        try:
+            c.execute(f"ALTER TABLE trades ADD COLUMN {col} TEXT DEFAULT '{default}'")
+        except Exception:
+            pass
+
+    for table in ('checkbook', 'credit_transactions'):
+        try:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN source TEXT DEFAULT 'manual'")
+        except Exception:
+            pass
+
+    for key, val in [
+        ('max_open_positions', '3'),
+        ('max_daily_loss_pct', '5'),
+        ('preferred_trade_duration', 'swing'),
+        ('alert_threshold_pct', '5'),
+    ]:
+        c.execute('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', (key, val))
+
     conn.commit()
     conn.close()
     print(f"✅ Database initialized at {DB_PATH}")

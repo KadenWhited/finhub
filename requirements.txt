@@ -4,6 +4,7 @@ python-dotenv==1.0.1
 
 # Stage 2
 requests==2.32.3
+yfinance==0.2.54
 
 # Stage 3
 ccxt==4.3.89

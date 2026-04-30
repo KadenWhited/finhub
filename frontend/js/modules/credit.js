@@ -98,16 +98,16 @@ function renderCreditView(el, accounts, stats, txns) {
 
     ${stats.total_limit ? `
     <div class="stat-grid" style="margin-bottom:20px">
-      <div class="stat-card red">
-        <div class="stat-label">Total Owed</div>
+    <div class="stat-card red" style="cursor:pointer" onclick="openCreditBalanceChart()">
+      <div class="stat-label">Total Owed ↗</div>
         <div class="stat-value neg">$${stats.total_balance.toFixed(2)}</div>
         <div class="stat-sub">across ${accounts.length} card${accounts.length !== 1 ? 's' : ''}</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Limit</div>
+      <div class="stat-card" style="cursor:pointer" onclick="openCreditCategoryBar()">
+        <div class="stat-label">Total Limit ↗</div>
         <div class="stat-value">$${stats.total_limit.toLocaleString()}</div>
       </div>
-      <div class="stat-card ${(stats.overall_utilization || 0) > 50 ? 'red' : ''}">
+      <div class="stat-card ${(stats.overall_utilization || 0) > 50 ? 'red' : ''}" style="cursor:pointer" onclick="openCreditBalanceChart()">
         <div class="stat-label">Overall Utilization</div>
         <div class="stat-value ${(stats.overall_utilization || 0) > 50 ? 'neg' : 'pos'}">${stats.overall_utilization ?? '—'}%</div>
         <div class="stat-sub">${(stats.overall_utilization || 0) > 30 ? '⚠ Consider paying down' : '✓ Healthy'}</div>
@@ -284,4 +284,42 @@ async function deleteCreditTxn(id) {
       showToast(e.message, 'error');
     }
   });
+}
+
+async function openCreditBalanceChart() {
+  openChartModal('Credit Balance Over Time', 'Charges minus payments',
+    `${rangeBar('1m','_creditLineRange')}${lineCanvasBlock('modal-credit-line', 240)}`);
+  window._creditLineRangeKey = '1m';
+  await _loadCreditLineChart('1m');
+}
+window._creditLineRange = async function(range) {
+  window._creditLineRangeKey = range;
+  document.querySelectorAll('#modal-content .range-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.range === range));
+  await _loadCreditLineChart(range);
+};
+
+async function _loadCreditLineChart(range) {
+  const data = await api.get(`/charts/spending?range=${range}`);
+  _mountModalLine('modal-credit-line', [
+    { label: 'Balance', color: '#ff4757', points: data.balance || [] }
+  ], range, 240);
+}
+
+async function openCreditCategoryBar() {
+  openChartModal('Charges by Category', 'Total credit spending per category',
+    barCanvasBlock('modal-credit-cat', 260));
+  try {
+    const txns = await api.get('/credit/transactions');
+    const charges = txns.filter(t => t.type === 'charge');
+    const byCat = {};
+    for (const t of charges) byCat[t.category] = (byCat[t.category] || 0) + t.amount;
+    const data = Object.entries(byCat)
+      .sort((a,b) => b[1]-a[1])
+      .map(([label, value]) => ({ label, value: parseFloat(value.toFixed(2)) }));
+    _mountModalBar('modal-credit-cat', data, {
+      formatValue: v => '$' + Math.abs(v).toFixed(0),
+      formatTooltipValue: v => '$' + parseFloat(v).toFixed(2),
+    });
+  } catch(e) { showToast(e.message,'error'); }
 }

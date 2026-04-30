@@ -1,5 +1,3 @@
-// modules/checkbook.js
-
 let checkbookData = [];
 const CB_CATEGORIES = ['Housing', 'Food', 'Transport', 'Utilities', 'Entertainment', 'Healthcare', 'Clothing', 'Trading Capital', 'Income', 'Other'];
 
@@ -56,21 +54,20 @@ function renderCheckbookView(el, entries, stats) {
     </div>
 
     <div class="stat-grid">
-      <div class="stat-card cyan">
-        <div class="stat-label">Current Balance</div>
+      <div class="stat-card cyan" style="cursor:pointer" onclick="openCheckbookBalanceChart()">
+        <div class="stat-label">Current Balance ↗</div>
         <div class="stat-value ${stats.balance >= 0 ? 'neutral' : 'neg'}">$${stats.balance.toFixed(2)}</div>
         <div class="stat-sub">${stats.entry_count} entries</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Income</div>
+      <div class="stat-card" style="cursor:pointer" onclick="openCheckbookCategoryBar('income')">
+        <div class="stat-label">Total Income ↗</div>
         <div class="stat-value pos">+$${stats.total_income.toFixed(2)}</div>
       </div>
-      <div class="stat-card red">
-        <div class="stat-label">Total Expenses</div>
+      <div class="stat-card red" style="cursor:pointer" onclick="openCheckbookCategoryBar('expense')">
+        <div class="stat-label">Total Expenses ↗</div>
         <div class="stat-value neg">-$${stats.total_expenses.toFixed(2)}</div>
       </div>
     </div>
-
     <div class="action-row">
       <span style="font-size:0.72rem;color:var(--text-3)">${withBalance.length} entries</span>
     </div>
@@ -224,4 +221,41 @@ async function deleteCbEntry(id) {
       showToast(e.message, 'error');
     }
   });
+}
+
+async function openCheckbookBalanceChart() {
+  openChartModal('Cash Balance', 'Running balance over time',
+    `${rangeBar('1m','_cbBalRange')}${lineCanvasBlock('modal-cb-balance', 240)}`);
+  window._cbBalRangeKey = '1m';
+  await _loadCbBalChart('1m');
+}
+window._cbBalRange = async function(range) {
+  window._cbBalRangeKey = range;
+  document.querySelectorAll('#modal-content .range-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.range === range));
+  await _loadCbBalChart(range);
+};
+async function _loadCbBalChart(range) {
+  const data = await api.get(`/charts/spending?range=${range}`);
+  _mountModalLine('modal-cb-balance', [
+    { label: 'Balance', color: '#00d2ff', points: data.balance || [] }
+  ], range, 240);
+}
+
+async function openCheckbookCategoryBar(type) {
+  const title = type === 'income' ? 'Income by Category' : 'Expenses by Category';
+  openChartModal(title, 'Total amount per category',
+    barCanvasBlock('modal-cb-cat', 260));
+  try {
+    const stats = await api.get('/checkbook/stats');
+    const cats  = stats.categories || {};
+    const data  = Object.entries(cats)
+      .map(([label, v]) => ({ label, value: parseFloat((v[type] || 0).toFixed(2)) }))
+      .filter(d => d.value > 0)
+      .sort((a,b) => b.value - a.value);
+    _mountModalBar('modal-cb-cat', data, {
+      formatValue: v => '$' + Math.abs(v).toFixed(0),
+      formatTooltipValue: v => '$' + parseFloat(v).toFixed(2),
+    });
+  } catch(e) { showToast(e.message,'error'); }
 }

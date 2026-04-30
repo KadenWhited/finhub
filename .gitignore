@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Environment & secrets
 .env
 *.env
@@ -34,7 +33,6 @@ desktop.ini
 
 # PyCharm
 .idea/
-=======
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -253,4 +251,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
->>>>>>> 593a191d5eb477b6daecc96921e524e5877cbdf8

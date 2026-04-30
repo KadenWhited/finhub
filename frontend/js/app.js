@@ -11,17 +11,21 @@ const pages = {
   trades: { render: renderTrades },
   checkbook: { render: renderCheckbook },
   credit: { render: renderCredit },
+  market: { render: renderMarket },
   gambling: { render: renderGambling },
   notes: { render: renderNotes },
   settings: { render: renderSettings },
   tools: { render: renderTools },
+  stocks: { render: renderStocks },
+  charts: { render: renderCharts },
 };
 
 let currentPage = 'dashboard';
 
 function navigateTo(page) {
   if (!pages[page]) return;
-
+  if (currentPage === 'market') stopMarketAutoRefresh();
+  
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   // Show target

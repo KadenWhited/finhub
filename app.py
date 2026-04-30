@@ -2,12 +2,13 @@ from flask import Flask, send_from_directory, request, session, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import timedelta
-load_dotenv
+load_dotenv()
 import os
 
 # Visible
 from backend.models.database import init_db
 from backend.routes.auth import auth_bp
+from backend.routes.market import market_bp
 from backend.routes.trades import trades_bp
 from backend.routes.checkbook import checkbook_bp
 from backend.routes.credit import credit_bp
@@ -15,10 +16,11 @@ from backend.routes.gambling import gambling_bp
 from backend.routes.dashboard import dashboard_bp
 from backend.routes.notes import notes_bp
 from backend.routes.settings import settings_bp
+from backend.routes.tools import tools_bp
 
 # Non Visible
-from backend.routes.tools import tools_bp
 from backend.routes.export import export_bp
+from backend.routes.charts import charts_bp
 
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
@@ -27,6 +29,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-fallback-change-this')
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(market_bp, url_prefix='/api/market')
 app.register_blueprint(trades_bp, url_prefix='/api/trades')
 app.register_blueprint(checkbook_bp, url_prefix='/api/checkbook')
 app.register_blueprint(credit_bp, url_prefix='/api/credit')
@@ -34,9 +37,10 @@ app.register_blueprint(gambling_bp, url_prefix='/api/gambling')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(notes_bp, url_prefix='/api/notes')
 app.register_blueprint(settings_bp, url_prefix='/api/settings')
-
 app.register_blueprint(tools_bp, url_prefix='/api/tools')
+
 app.register_blueprint(export_bp, url_prefix='/api/export')
+app.register_blueprint(charts_bp, url_prefix='/api/charts')
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
