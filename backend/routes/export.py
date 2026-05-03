@@ -1,8 +1,6 @@
-import csv
-import json
-import io
+import csv, os, io, json
 from datetime import datetime
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, session
 from backend.models.database import get_db
 
 export_bp = Blueprint('export', __name__)
@@ -26,6 +24,8 @@ def get_all_data(db):
 
 @export_bp.route('/json', methods=['GET'])
 def export_json():
+    if os.environ.get('APP_PASSWORD') and not session.get('authenticated'):
+        return jsonify({'error': 'Unauthorized'}), 401
     db = get_db()
     data = get_all_data(db)
     db.close()

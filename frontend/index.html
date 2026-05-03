@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Finance Hub</title>
+  <title>Money Right</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/stage2d.css">
   <link rel="stylesheet" href="/css/stage3.css">
   <link rel="stylesheet" href="/css/stage4.css">
+  <link rel="stylesheet" href="/css/stage5.css">
   <link rel="stylesheet" href="/css/alerts.css">
   <link rel="stylesheet" href="/css/news-enhanced.css">
   <link rel="manifest" href="/manifest.json">
@@ -59,20 +60,28 @@
         <li><a href="#" data-page="gambling" class="nav-link">
           <span class="nav-icon">◈</span><span class="nav-label">Gambling</span>
         </a></li>
-        <li><a href="#" data-page="tools" class="nav-link">
-          <span class="nav-icon">⊕</span><span class="nav-label">Tools</span>
-        </a></li>
-        <li><a href="#" data-page="notes" class="nav-link">
-          <span class="nav-icon">≡</span><span class="nav-label">Journal</span>
-        </a></li>
-        <li><a href="#" data-page="backtester" class="nav-link">
-          <span class="nav-icon">◈</span><span class="nav-label">Backtester</span>
+        <li><a href="#" data-page="predictions" class="nav-link">
+          <span class="nav-icon">◈</span>
+          <span class="nav-label">Predictions</span>
         </a></li>
         <li><a href="#" data-page="news" class="nav-link">
           <span class="nav-icon">≋</span><span class="nav-label">News</span>
         </a></li>
+        <li><a href="#" data-page="tools" class="nav-link">
+          <span class="nav-icon">⊕</span><span class="nav-label">Tools</span>
+        </a></li>
+        <li><a href="#" data-page="backtester" class="nav-link">
+          <span class="nav-icon">◈</span><span class="nav-label">Backtester</span>
+        </a></li>
+        <li><a href="#" data-page="connections" class="nav-link">
+          <span class="nav-icon">⬡</span>
+          <span class="nav-label">Connections</span>
+        </a></li>
         <li><a href="#" data-page="settings" class="nav-link">
           <span class="nav-icon">⊙</span><span class="nav-label">Settings</span>
+        </a></li>
+        <li><a href="#" data-page="notes" class="nav-link">
+          <span class="nav-icon">≡</span><span class="nav-label">Journal</span>
         </a></li>
       </ul>
       <div class="sidebar-footer">
@@ -125,11 +134,13 @@
       <div id="page-stocks" class="page"></div>
       <div id="page-charts" class="page"></div>
       <div id="page-gambling" class="page"></div>
+      <div id="page-predictions" class="page"></div>
       <div id="page-tools" class="page"></div>
       <div id="page-notes" class="page"></div>
       <div id="page-backtester" class="page"></div>
       <div id="page-news" class="page"></div>
       <div id="page-settings" class="page"></div>
+      <div id="page-connections" class="page"></div>
     </main>
 
   </div>
@@ -156,6 +167,7 @@
   <script src="/js/modules/budget.js"></script>
   <script src="/js/modules/market.js"></script>
   <script src="/js/modules/gambling.js"></script>
+  <script src="/js/modules/predictions.js"></script>
   <script src="/js/modules/notes.js"></script>
   <script src="/js/modules/backtester.js"></script>
   <script src="/js/modules/news.js"></script>
@@ -164,6 +176,7 @@
   <script src="/js/modules/charts-view.js"></script>
   <script src="/js/modules/stocks.js"></script>
   <script src="/js/modules/alert-settings.js"></script>
+  <script src="/js/modules/connections.js"></script>
 
   <script>window.FINHUB_VAPID_PUBLIC_KEY = 'BJU7mCXaei0NJBtgk42uELc2l38LTteWPhvFHx0STlLFSrZ1i1gVWD1bDOrgWPuitdJ8ZF7u9J-0swabBFaeTTQ=';</script>
 

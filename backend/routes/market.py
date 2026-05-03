@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.models.database import get_db
 from backend.services.coingecko import get_prices, get_top_coins, search_coins, clear_cache
+import datetime
 
 market_bp = Blueprint('market', __name__)
 
@@ -157,3 +158,14 @@ def search():
 def bust_cache():
     clear_cache()
     return jsonify({'ok': True, 'message': 'Price cache cleared'})
+
+_market_calls = {}
+def _rate_limit_market():
+    ip  = request.remote_addr
+    now = datetime.time()
+    calls = [t for t in _market_calls.get(ip, []) if now - t < 60]
+    if len(calls) >= 30:  # 30 market requests per minute per IP
+        return jsonify({'error': 'Rate limited'}), 429
+    calls.append(now)
+    _market_calls[ip] = calls
+    return None

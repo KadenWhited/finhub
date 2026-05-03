@@ -9,7 +9,7 @@
  *  - Background sync for queued API calls
  */
 
-const CACHE_NAME    = 'finhub-v1';
+const CACHE_NAME    = 'moneyright-v1';
 const SYNC_TAG      = 'finhub-sync';
 const PUSH_TAG      = 'finhub-alert';
 
@@ -64,6 +64,8 @@ const CACHE_FIRST_API = [
   '/api/checkbook/stats',
   '/api/dashboard/summary',
 ];
+
+open_paths = ['/api/auth/', '/css/', '/js/', '/assets/', '/manifest.json', '/login', '/sw.js']
 
 // ─────────────────────────────────────────
 //  INSTALL — cache app shell
@@ -249,7 +251,7 @@ self.addEventListener('push', event => {
   try {
     data = event.data.json();
   } catch {
-    data = { title: 'FinHub Alert', body: event.data.text() };
+    data = { title: 'MoneyRight Alert', body: event.data.text() };
   }
 
   const options = {
@@ -268,7 +270,7 @@ self.addEventListener('push', event => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'FinHub', options)
+    self.registration.showNotification(data.title || 'MoneyRight', options)
   );
 });
 

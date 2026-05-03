@@ -31,8 +31,8 @@ except ImportError:
 
 
 class FinHubService(win32serviceutil.ServiceFramework):
-    _svc_name_        = 'FinHub'
-    _svc_display_name_= 'FinHub — Personal Finance Hub'
+    _svc_name_        = 'MoneyRight'
+    _svc_display_name_= 'Money Right — Personal Finance Hub'
     _svc_description_ = 'Self-hosted finance dashboard (Flask)'
 
     def __init__(self, args):

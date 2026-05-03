@@ -1,7 +1,7 @@
 {
-  "name": "FinHub — Finance Dashboard",
-  "short_name": "FinHub",
-  "description": "Personal finance, crypto trading, and budget hub",
+  "name": "Money Right",
+  "short_name": "$RIGHT",
+  "description": "Wait 'til I get my money right.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#070709",

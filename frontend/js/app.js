@@ -14,6 +14,7 @@ const pages = {
   budget: { render: renderBudget },
   market: { render: renderMarket },
   gambling: { render: renderGambling },
+  predictions: { render: renderPredictions },
   notes: { render: renderNotes },
   backtester: { render: renderBacktester },
   news: { render: renderNews },
@@ -21,6 +22,7 @@ const pages = {
   tools: { render: renderTools },
   stocks: { render: renderStocks },
   charts: { render: renderCharts },
+  connections: { render: renderConnections },
 };
 
 let currentPage = 'dashboard';

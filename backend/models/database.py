@@ -247,6 +247,103 @@ def init_db():
         ON credit_transactions(date, amount, description, account_id)
     ''')
 
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS ingestion_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            source      TEXT NOT NULL,
+            status      TEXT NOT NULL,
+            record_type TEXT,
+            external_id TEXT,
+            raw_data    TEXT,
+            message     TEXT,
+            created_at  TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS connections (
+            service           TEXT PRIMARY KEY,
+            enabled           INTEGER DEFAULT 1,
+            last_sync_at      TEXT,
+            last_sync_status  TEXT,
+            records_imported  INTEGER DEFAULT 0,
+            error_message     TEXT,
+            updated_at        TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS predictions (
+            id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+            external_id            TEXT UNIQUE,
+            market_ticker          TEXT NOT NULL,
+            market_title           TEXT NOT NULL,
+            category               TEXT,
+            side                   TEXT NOT NULL,
+            action                 TEXT NOT NULL,
+            contracts              INTEGER NOT NULL,
+            entry_price_cents      INTEGER,
+            exit_price_cents       INTEGER,
+            fees_cents             INTEGER DEFAULT 0,
+            status                 TEXT DEFAULT 'open',
+            resolution_result      TEXT,
+            resolution_value_cents INTEGER,
+            opened_at              TEXT,
+            closed_at              TEXT,
+            exit_type              TEXT,
+            notes                  TEXT,
+            source                 TEXT DEFAULT 'kalshi_api',
+            created_at             TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS prediction_watchlist (
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            market_ticker         TEXT NOT NULL UNIQUE,
+            market_title          TEXT NOT NULL,
+            category              TEXT,
+            yes_price_cents       INTEGER,
+            no_price_cents        INTEGER,
+            volume                INTEGER,
+            close_time            TEXT,
+            alert_threshold_cents INTEGER DEFAULT 10,
+            added_at              TEXT DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Add external_id and fees to trades if not present
+    for col_def in ['external_id TEXT', 'fees REAL DEFAULT 0']:
+        try:
+            c.execute(f"ALTER TABLE trades ADD COLUMN {col_def}")
+        except Exception:
+            pass
+
+    # Add external_id to checkbook and credit_transactions
+    for table in ('checkbook', 'credit_transactions'):
+        try:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN external_id TEXT")
+        except Exception:
+            pass
+
+    # Add source to gambling_sessions
+    try:
+        c.execute("ALTER TABLE gambling_sessions ADD COLUMN source TEXT DEFAULT 'manual'")
+    except Exception:
+        pass
+
+    # Indexes for fast external_id lookups
+    c.execute('''CREATE INDEX IF NOT EXISTS idx_trades_external_id
+                 ON trades(external_id) WHERE external_id IS NOT NULL''')
+    c.execute('''CREATE INDEX IF NOT EXISTS idx_checkbook_external_id
+                 ON checkbook(external_id) WHERE external_id IS NOT NULL''')
+    c.execute('''CREATE INDEX IF NOT EXISTS idx_credit_external_id
+                 ON credit_transactions(external_id) WHERE external_id IS NOT NULL''')
+
+    # Seed connections table
+    for svc in ('kraken', 'kalshi', 'gmail'):
+        c.execute("INSERT OR IGNORE INTO connections (service) VALUES (?)", (svc,))
+
     conn.commit()
     conn.close()
     print(f"✅ Database initialized at {DB_PATH}")
