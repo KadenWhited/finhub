@@ -248,13 +248,12 @@ def _send_ntfy(title: str, message: str, priority_int: int = 2) -> bool:
         import requests
         requests.post(
             f'https://ntfy.sh/{topic}',
-            data=message.encode(),
+            data=message.encode('utf-8'),
             headers={
-                'Title':    title,
-                'Priority': ntfy_priority,
-                'Tags':     tags,
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Title': title.encode('utf-8'),
             },
-            timeout=5
+            timeout=10,
         )
         return True
     except Exception as e:

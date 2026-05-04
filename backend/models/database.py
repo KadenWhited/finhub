@@ -10,8 +10,23 @@ def _get_base_dir():
     else:
         # Running normally
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    
+def _get_db_path() -> str:
+    data_dir = os.environ.get('MONEYRIGHT_DATA_DIR')
+    if data_dir:
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, 'finance_hub.db')
 
-DB_PATH = os.path.join(_get_base_dir(), 'data', 'finance_hub.db')
+    if getattr(sys, 'frozen', False):
+        base = os.path.dirname(sys.executable)
+    else:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+    data_dir = os.path.join(base, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    return os.path.join(data_dir, 'finance_hub.db')
+
+DB_PATH = _get_db_path()
 
 def get_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

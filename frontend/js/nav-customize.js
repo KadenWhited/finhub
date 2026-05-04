@@ -368,7 +368,7 @@ async function initNavCustomize() {
     editBtn.style.cssText = 'width:100%;margin-top:6px;color:var(--text-3);font-size:0.7rem';
     editBtn.textContent = '✎ Edit';
     editBtn.onclick   = toggleNavEdit;
-    footer.insertBefore(editBtn, footer.firstChild);
+    footer.appendChild(editBtn);
 
     // Visibility panel — hidden by default
     const panel = document.createElement('div');

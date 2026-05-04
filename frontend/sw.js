@@ -9,9 +9,11 @@
  *  - Background sync for queued API calls
  */
 
-const CACHE_NAME    = 'moneyright-v1.5.3';
+const CACHE_NAME    = 'moneyright-v1.5.4';
 const SYNC_TAG      = 'finhub-sync';
 const PUSH_TAG      = 'finhub-alert';
+const IS_LOCAL_EXE  = self.location.hostname === 'localhost' ||
+                      self.location.hostname === '127.0.0.1';
 
 // App shell — files cached on install for offline use
 const APP_SHELL = [
@@ -72,6 +74,10 @@ open_paths = ['/api/auth/', '/css/', '/js/', '/assets/', '/manifest.json', '/log
 // ─────────────────────────────────────────
 
 self.addEventListener('install', event => {
+  if (IS_LOCAL_EXE) {
+    self.skipWaiting();
+    return;
+  }
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(APP_SHELL))
@@ -99,6 +105,11 @@ self.addEventListener('activate', event => {
 // ─────────────────────────────────────────
 
 self.addEventListener('fetch', event => {
+  if (IS_LOCAL_EXE) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   const { request } = event;
   const url = new URL(request.url);
 

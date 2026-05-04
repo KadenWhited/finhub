@@ -4,6 +4,24 @@ from dotenv import load_dotenv
 from datetime import timedelta
 load_dotenv()
 import os
+import sys
+
+def _get_base_dir() -> str:
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+BASE_DIR = _get_base_dir()
+
+def _get_frontend_dir() -> str:
+    env_override = os.environ.get('MONEYRIGHT_FRONTEND_DIR')
+    if env_override and os.path.isdir(env_override):
+        return env_override
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, 'frontend')
+    return os.path.join(BASE_DIR, 'frontend')
+
+FRONTEND_DIR = _get_frontend_dir()
 
 # Visible
 from backend.models.database import init_db
@@ -35,7 +53,14 @@ from backend.routes.email_parser import email_bp
 
 from backend.services.ingestion.scheduler import init_scheduler, shutdown_scheduler
 
-app = Flask(__name__, static_folder='frontend', static_url_path='')
+app = Flask(
+    __name__,
+    static_folder=os.path.join(FRONTEND_DIR),
+    static_url_path='',
+)
+
+with app.app_context():
+    init_db()
 
 CORS(app, origins=[
     'http://localhost:5000',
@@ -127,24 +152,27 @@ def get_version():
 
 # ── Static routes ─────────────────────────────────────────────────────────────
 @app.route('/')
-def index():
-    return send_from_directory('frontend', 'index.html')
-
-@app.route('/login')
-def login_page():
-    return send_from_directory('frontend', 'login.html')
-
 @app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('frontend', path)
+def serve_frontend(path=''):
+    # Auth check
+    if path.startswith('api/'):
+        return  # Let API routes handle it
+
+    # Serve login page if not authenticated
+    from flask import session, send_from_directory
+    if path == 'login' or path == 'login.html':
+        return send_from_directory(FRONTEND_DIR, 'login.html')
+
+    # Check auth
+    if not session.get('authenticated'):
+        return send_from_directory(FRONTEND_DIR, 'login.html')
+
+    # Serve index for all other routes (SPA)
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    init_db()
-    init_scheduler(app)   # Starts all background jobs (alerts, syncs, daily summary)
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
-    print("\n🚀 Finance Hub running at http://localhost:5000\n")
-    if debug_mode:
-        print("⚠  Debug mode ON — development only\n")
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+    import os
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug, host='127.0.0.1', port=5000)

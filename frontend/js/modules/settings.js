@@ -1,5 +1,445 @@
-// Backup & Restore UI — add to settings.js
-// Renders the backup/restore card inside the Settings page
+﻿// modules/settings.js ΓÇö Stage 2c replacement
+
+async function renderSettings() {
+  const el = document.getElementById('page-settings');
+  el.innerHTML = loadingHtml('Loading settings');
+  
+  try {
+    const s = await api.get('/settings/');
+    renderSettingsView(el, s);
+  } catch (e) {
+    el.innerHTML = `<p style="color:var(--red);padding:20px">Error: ${e.message}</p>`;
+  }
+}
+
+function renderSettingsView(el, s) {
+  const cap = parseFloat(s.starting_capital || 350);
+  const riskPct = parseFloat(s.risk_per_trade_pct || 2);
+  const riskAmt = (cap * riskPct / 100).toFixed(2);
+  const maxLoss = parseFloat(s.max_daily_loss_pct || 5);
+  const maxLossAmt = (cap * maxLoss / 100).toFixed(2);
+  const alertThreshold = s.alert_threshold_pct || '5';
+  const duration = s.preferred_trade_duration || 'swing';
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Settings</div>
+        <div class="page-subtitle">Account & risk configuration</div>
+      </div>
+    </div>
+
+    <div style="max-width:560px;display:flex;flex-direction:column;gap:18px">
+
+      <!-- Capital -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Trading Capital</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Starting Capital ($)</label>
+            <input id="s-capital" class="form-input" type="number" step="any"
+              value="${s.starting_capital || 350}"
+              oninput="updateRiskPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Currency</label>
+            <select id="s-currency" class="form-select">
+              <option value="USD" ${s.currency === 'USD' ? 'selected' : ''}>USD</option>
+              <option value="EUR" ${s.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+              <option value="GBP" ${s.currency === 'GBP' ? 'selected' : ''}>GBP</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Profile -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">Risk Profile</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+          These values feed directly into the position size calculator and will power the Stage 3 backtester.
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Risk Per Trade (%)</label>
+            <input id="s-risk" class="form-input" type="number" step="0.1" min="0.1" max="100"
+              value="${s.risk_per_trade_pct || 2}"
+              oninput="updateRiskPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Open Positions</label>
+            <input id="s-maxpos" class="form-input" type="number" min="1" max="20"
+              value="${s.max_open_positions || 3}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max Daily Loss (%)</label>
+            <input id="s-maxloss" class="form-input" type="number" step="0.5" min="1" max="100"
+              value="${s.max_daily_loss_pct || 5}"
+              oninput="updateRiskPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Trade Style</label>
+            <select id="s-duration" class="form-select">
+              <option value="scalp" ${duration === 'scalp' ? 'selected' : ''}>Scalp (minutesΓÇôhours)</option>
+              <option value="swing" ${duration === 'swing' ? 'selected' : ''}>Swing (daysΓÇôweeks)</option>
+              <option value="position" ${duration === 'position' ? 'selected' : ''}>Position (weeksΓÇômonths)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live risk preview -->
+        <div id="risk-preview" class="risk-preview">
+          <div class="risk-row">
+            <span>Max risk per trade</span>
+            <span id="rp-per-trade" class="neg">-$${riskAmt}</span>
+          </div>
+          <div class="risk-row">
+            <span>Max daily loss</span>
+            <span id="rp-daily-loss" class="neg">-$${maxLossAmt}</span>
+          </div>
+          <div class="risk-row">
+            <span>Max open positions</span>
+            <span id="rp-maxpos">${s.max_open_positions || 3} simultaneous</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Alerts -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Market Alert Threshold</div>
+        <div class="form-group">
+          <label class="form-label">Flag coins moving more than this % in 24h</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="s-alert" class="form-input" type="number" step="0.5" min="1" max="50"
+              value="${alertThreshold}" style="max-width:120px">
+            <span style="font-size:0.78rem;color:var(--text-3)">% (default: 5%)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- News Feed Weight Customization -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">News Feed Personalization Weights</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:16px;line-height:1.6">
+          Control how the ranking algorithm weighs each factor.
+          Higher value = that factor matters more. Values auto-normalize to 100%.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${[
+            ['news_weight_recency',        'Recency',           'How recent the article is',           40],
+            ['news_weight_coin_relevance', 'Coin Relevance',    'Mentions your watchlist/traded coins', 30],
+            ['news_weight_strategy_align', 'Strategy Fit',      'Matches your trading style',          15],
+            ['news_weight_level_match',    'Experience Level',  'Matches beginner/intermediate/advanced',10],
+            ['news_weight_content_type',   'Content Type',      'News vs education vs analysis',        5],
+          ].map(([key, label, desc, defaultVal]) => `
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <div>
+                  <div style="font-size:0.78rem;color:var(--text)">${label}</div>
+                  <div style="font-size:0.68rem;color:var(--text-3)">${desc}</div>
+                </div>
+                <span id="${key}_display" style="font-size:0.82rem;color:var(--accent);font-weight:600;min-width:36px;text-align:right">
+                  \${s.${key} || ${defaultVal}}
+                </span>
+              </div>
+              <input type="range" id="${key}" class="weight-slider"
+                min="0" max="80" step="5"
+                value="\${s.${key} || ${defaultVal}}"
+                oninput="document.getElementById('${key}_display').textContent=this.value">
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:0.68rem;color:var(--text-3);margin-top:10px">
+          Values auto-normalize ΓÇö setting Recency to 80 doesn't break other factors.
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Price Alert Notifications</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+          Desktop notifications when watched coins move beyond your alert threshold.
+          Requires <code style="background:var(--bg-3);padding:1px 5px;border-radius:3px">pip install plyer</code> for system notifications.
+        </div>
+        <div id="alert-status-display" style="margin-bottom:14px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="testNotification()">≡ƒöö Send Test Alert</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearAlertCooldowns()">Γå║ Reset Cooldowns</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadAlertStatus()">Γå╗ Refresh Status</button>
+        </div>
+      </div>
+
+      <!-- PWA & Mobile -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">Mobile & Notifications</div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-bottom:14px;line-height:1.6">
+          Install FinHub to your phone home screen and enable push notifications
+          for price alerts that work even when the app is closed.
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+
+          <!-- Install to home screen -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:0.82rem;color:var(--text)">Install to Home Screen</div>
+              <div style="font-size:0.7rem;color:var(--text-3)">Works like a native app, no app store needed</div>
+            </div>
+            <button id="pwa-install-btn" class="btn btn-primary btn-sm" onclick="promptInstall()" style="display:none">
+              Install
+            </button>
+            <span id="pwa-installed-badge" style="display:none;font-size:0.72rem;color:var(--green)">Γ£ô Installed</span>
+          </div>
+
+          <!-- Push notifications -->
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:0.82rem;color:var(--text)">Push Notifications</div>
+                <div style="font-size:0.7rem;color:var(--text-3)">Price alerts sent to your device</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" onclick="enablePushNotifications()">Enable</button>
+                <button class="btn btn-ghost btn-sm" onclick="disablePushNotifications()">Disable</button>
+              </div>
+            </div>
+            <div id="push-status-display" style="margin-top:8px"></div>
+          </div>
+
+          <!-- Test push -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+            <div>
+              <div style="font-size:0.82rem;color:var(--text)">Test Push Notification</div>
+              <div style="font-size:0.7rem;color:var(--text-3)">Send a test to all subscribed devices</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="sendTestPush()">Send Test</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Data Management -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">Data Management</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          ${exportRow('Export all data (JSON)', 'Full backup ΓÇö re-importable', '/api/export/json')}
+          ${exportRow('Export trades (CSV)', 'For spreadsheet analysis', '/api/export/csv/trades')}
+          ${exportRow('Export checkbook (CSV)', '', '/api/export/csv/checkbook')}
+          ${exportRow('Export gambling (CSV)', '', '/api/export/csv/gambling')}
+          ${exportRow('Export credit (CSV)', '', '/api/export/csv/credit')}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+            <div>
+              <div style="font-size:0.82rem;color:var(--text)">Import from JSON backup</div>
+              <div style="font-size:0.7rem;color:var(--text-3)">Merges with existing data</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">Γ¼å Import</button>
+            <input id="import-file" type="file" accept=".json" style="display:none" onchange="handleImport(event)">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()" style="width:100%;padding:13px;font-size:0.88rem">
+        Save All Settings
+      </button>
+
+    </div>
+
+    ${renderBackupCard()}
+  `;
+
+  loadPushStatus();
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('pwa-installed-badge').style.display = 'inline';
+  } else {
+    document.getElementById('pwa-install-btn').style.display = _installPrompt ? 'block' : 'none';
+  }
+}
+
+function exportRow(label, sub, href) {
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:0.82rem;color:var(--text)">${label}</div>
+        ${sub ? `<div style="font-size:0.7rem;color:var(--text-3)">${sub}</div>` : ''}
+      </div>
+      <a href="${href}" class="btn btn-ghost btn-sm" download>Γ¼ç Export</a>
+    </div>
+  `;
+}
+
+function updateRiskPreview() {
+  const cap = parseFloat(document.getElementById('s-capital')?.value || 350);
+  const risk = parseFloat(document.getElementById('s-risk')?.value || 2);
+  const maxLoss = parseFloat(document.getElementById('s-maxloss')?.value || 5);
+  const maxPos = document.getElementById('s-maxpos')?.value || 3;
+
+  const perTrade = document.getElementById('rp-per-trade');
+  const dailyLoss = document.getElementById('rp-daily-loss');
+  const maxPosEl = document.getElementById('rp-maxpos');
+
+  if (perTrade) perTrade.textContent = `-$${(cap * risk / 100).toFixed(2)}`;
+  if (dailyLoss) dailyLoss.textContent = `-$${(cap * maxLoss / 100).toFixed(2)}`;
+  if (maxPosEl) maxPosEl.textContent = `${maxPos} simultaneous`;
+}
+
+async function saveSettings() {
+  const body = {
+    starting_capital: document.getElementById('s-capital').value,
+    currency: document.getElementById('s-currency').value,
+    risk_per_trade_pct: document.getElementById('s-risk').value,
+    max_open_positions: document.getElementById('s-maxpos').value,
+    max_daily_loss_pct: document.getElementById('s-maxloss').value,
+    preferred_trade_duration: document.getElementById('s-duration').value,
+    alert_threshold_pct: document.getElementById('s-alert').value,
+    news_weight_recency:        document.getElementById('news_weight_recency')?.value,
+    news_weight_coin_relevance: document.getElementById('news_weight_coin_relevance')?.value,
+    news_weight_strategy_align: document.getElementById('news_weight_strategy_align')?.value,
+    news_weight_level_match:    document.getElementById('news_weight_level_match')?.value,
+    news_weight_content_type:   document.getElementById('news_weight_content_type')?.value,
+  };
+
+  const missing = Object.entries(body).filter(([k, v]) => !v);
+  if (missing.length) { showToast('Fill in all fields', 'error'); return; }
+
+  try {
+    await api.put('/settings/', body);
+    showToast('Settings saved Γ£ô', 'success');
+    renderSettings();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const result = await api.post('/export/import', data);
+    const counts = Object.entries(result.imported).map(([k, v]) => `${v} ${k}`).join(', ');
+    showToast(`Imported: ${counts}`, 'success');
+  } catch (e) {
+    showToast('Import failed: ' + e.message, 'error');
+  }
+  event.target.value = '';
+}
+
+async function loadAlertStatus() {
+  try {
+    const status = await api.get('/alerts/status');
+    const el = document.getElementById('alert-status-display');
+    if (!el) return;
+
+    const recent = Object.entries(status.last_alerts || {})
+      .map(([coin, ts]) => `${coin.toUpperCase().substring(0,8)}: ${new Date(ts).toLocaleTimeString()}`)
+      .join(', ');
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${status.running?'var(--green)':'var(--red)'}"></div>
+        <span style="font-size:0.78rem;color:${status.running?'var(--green)':'var(--text-3)'}">
+          ${status.running ? 'Alert thread running' : 'Alert thread not running'}
+        </span>
+      </div>
+      ${recent ? `<div style="font-size:0.7rem;color:var(--text-3)">Recent alerts: ${recent}</div>` : ''}
+      <div style="font-size:0.7rem;color:var(--text-3)">Cooldown: ${status.cooldown_hours}h between same-coin alerts</div>
+    `;
+  } catch (e) {
+    const el = document.getElementById('alert-status-display');
+    if (el) el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Alert service unavailable</div>`;
+  }
+}
+
+async function testNotification() {
+  showToast('Sending test to all channels...', '');
+  try {
+    const result = await api.post('/alerts/test', {});
+    const r = result.results || {};
+    const lines = [
+      `Desktop: ${r.desktop  ? 'Γ£ô' : 'Γ£ù'}`,
+      `Telegram: ${r.telegram ? 'Γ£ô' : 'Γ£ù'}`,
+      `ntfy:     ${r.ntfy    ? 'Γ£ô' : 'Γ£ù'}`,
+      `Web push: ${r.push    ? 'Γ£ô' : 'Γ£ù'}`,
+    ];
+    showToast(lines.join('  ┬╖  '), result.sent ? 'success' : 'error');
+    console.log('Alert test results:', r);
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function clearAlertCooldowns() {
+  try {
+    await api.post('/alerts/clear', {});
+    showToast('Alert cooldowns reset Γ£ô', 'success');
+    loadAlertStatus();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function enablePushNotifications() {
+  const granted = await requestPushPermission();
+  if (!granted) return;
+  const sub = await subscribeToPush();
+  if (sub) loadPushStatus();
+}
+
+async function disablePushNotifications() {
+  await unsubscribeFromPush();
+  loadPushStatus();
+}
+
+async function loadPushStatus() {
+  const el = document.getElementById('push-status-display');
+  if (!el) return;
+  try {
+    const status = await getPushStatus();
+    const serverStatus = await api.get('/push/status').catch(() => ({}));
+
+    if (!status.supported) {
+      el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Push notifications not supported in this browser</div>`;
+      return;
+    }
+    if (!status.vapid_configured || !serverStatus.vapid_configured) {
+      el.innerHTML = `
+        <div style="font-size:0.72rem;color:var(--yellow)">
+          ΓÜá VAPID keys not configured ΓÇö push notifications require server-side setup.
+          <a href="/DEPLOYMENT.md" target="_blank" style="color:var(--accent)">See DEPLOYMENT.md</a>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${status.subscribed?'var(--green)':'var(--text-3)'}"></div>
+        <span style="font-size:0.75rem;color:${status.subscribed?'var(--green)':'var(--text-3)'}">
+          ${status.subscribed ? 'Subscribed on this device' : 'Not subscribed on this device'}
+        </span>
+        <span style="font-size:0.68rem;color:var(--text-3)">
+          ┬╖ ${serverStatus.subscriptions || 0} total subscriptions
+        </span>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-3);margin-top:4px">
+        Permission: ${status.permission}
+      </div>`;
+  } catch (e) {
+    if (el) el.innerHTML = `<div style="font-size:0.72rem;color:var(--text-3)">Push status unavailable</div>`;
+  }
+}
+
+async function sendTestPush() {
+  try {
+    const result = await api.post('/push/test', {});
+    if (result.sent > 0) showToast(`Test push sent to ${result.sent} device(s) Γ£ô`, 'success');
+    else showToast(result.error || 'No subscribed devices', 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────
+//  BACKUP & RESTORE CARD
+// ─────────────────────────────────────────
 
 function renderBackupCard() {
   return `
@@ -11,12 +451,8 @@ function renderBackupCard() {
         If you set a password, it cannot be recovered — store it safely.
       </div>
 
-      <!-- EXPORT SECTION -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-lg);
-                  padding:16px;margin-bottom:12px">
-        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:12px">
-          ↓ Export Backup
-        </div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:12px">↓ Export Backup</div>
         <div class="form-grid" style="margin-bottom:12px">
           <div class="form-group">
             <label class="form-label">Scope</label>
@@ -28,57 +464,34 @@ function renderBackupCard() {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">
-              Encryption Password
-              <span style="font-size:0.65rem;color:var(--text-3);font-weight:400">
-                — leave blank for unencrypted
-              </span>
-            </label>
-            <input id="backup-password" class="form-input" type="password"
-              placeholder="Optional — cannot be recovered if lost">
+            <label class="form-label">Encryption Password <span style="font-size:0.65rem;color:var(--text-3);font-weight:400">— leave blank for unencrypted</span></label>
+            <input id="backup-password" class="form-input" type="password" placeholder="Optional — cannot be recovered if lost">
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary" onclick="downloadBackup()">
-            ↓ Download Backup
-          </button>
+          <button class="btn btn-primary" onclick="downloadBackup()">↓ Download Backup</button>
           <div id="backup-status" style="font-size:0.72rem;color:var(--text-3)"></div>
         </div>
       </div>
 
-      <!-- IMPORT SECTION -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-lg);
-                  padding:16px;margin-bottom:12px">
-        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:12px">
-          ↑ Import Backup
-        </div>
-
-        <!-- File drop zone -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:12px">↑ Import Backup</div>
         <div id="backup-dropzone"
-          style="border:2px dashed var(--border);border-radius:var(--radius);
-                 padding:24px;text-align:center;cursor:pointer;margin-bottom:12px;
-                 transition:all 0.15s;color:var(--text-3);font-size:0.78rem"
+          style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;margin-bottom:12px;transition:all 0.15s;color:var(--text-3);font-size:0.78rem"
           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
           ondragleave="this.style.borderColor='var(--border)'"
           ondrop="handleBackupDrop(event)"
           onclick="document.getElementById('backup-file-input').click()">
           <div style="font-size:1.2rem;margin-bottom:6px">📁</div>
           Drop .mrbackup file here or click to browse
-          <input id="backup-file-input" type="file" accept=".mrbackup"
-            style="display:none" onchange="handleBackupFile(this.files[0])">
+          <input id="backup-file-input" type="file" accept=".mrbackup" style="display:none" onchange="handleBackupFile(this.files[0])">
         </div>
-
-        <!-- File info (shown after file selected) -->
         <div id="backup-file-info" style="display:none;margin-bottom:12px">
-          <div style="background:var(--bg-3);border:1px solid var(--border);
-                      border-radius:var(--radius);padding:12px;font-size:0.75rem">
-            <div id="backup-file-name" style="font-weight:600;color:var(--text);
-                                               margin-bottom:6px"></div>
+          <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:0.75rem">
+            <div id="backup-file-name" style="font-weight:600;color:var(--text);margin-bottom:6px"></div>
             <div id="backup-file-meta" style="color:var(--text-3);line-height:1.8"></div>
           </div>
         </div>
-
-        <!-- Password for encrypted backups -->
         <div id="backup-import-pw-row" style="display:none;margin-bottom:12px">
           <div class="form-group">
             <label class="form-label">Decryption Password</label>
@@ -87,343 +500,37 @@ function renderBackupCard() {
               oninput="validateBackupFile()">
           </div>
         </div>
-
-        <!-- Import mode -->
         <div class="form-group" style="margin-bottom:12px">
           <label class="form-label">Import Mode</label>
           <div style="display:flex;gap:10px;margin-top:4px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
-                          font-size:0.78rem">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78rem">
               <input type="radio" name="import-mode" value="merge" checked>
-              <span>
-                <strong>Merge</strong>
-                <span style="color:var(--text-3)"> — add missing records, keep existing</span>
-              </span>
+              <span><strong>Merge</strong> <span style="color:var(--text-3)">— add missing records, keep existing</span></span>
             </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
-                          font-size:0.78rem">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78rem">
               <input type="radio" name="import-mode" value="replace">
-              <span>
-                <strong>Replace</strong>
-                <span style="color:var(--red)"> — wipe and restore (safety backup created first)</span>
-              </span>
+              <span><strong>Replace</strong> <span style="color:var(--red)">— wipe and restore (safety backup created first)</span></span>
             </label>
           </div>
         </div>
-
         <div style="display:flex;gap:8px;align-items:center">
-          <button id="backup-import-btn" class="btn btn-primary" style="display:none"
-            onclick="importBackup()">
-            ↑ Import
-          </button>
+          <button id="backup-import-btn" class="btn btn-primary" style="display:none" onclick="importBackup()">↑ Import</button>
           <div id="backup-import-status" style="font-size:0.72rem;color:var(--text-3)"></div>
         </div>
       </div>
 
-      <!-- AUTO BACKUPS -->
       <div style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;
-                    margin-bottom:10px">
-          <div style="font-size:0.78rem;font-weight:600;color:var(--text)">
-            🛡 Safety Backups
-          </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--text)">🛡 Safety Backups</div>
           <button class="btn btn-ghost btn-sm" onclick="loadSafetyBackups()">↻ Refresh</button>
         </div>
         <div style="font-size:0.7rem;color:var(--text-3);margin-bottom:10px">
-          Automatically created before every Replace import. Stored locally in
-          <code>data/backups/</code>.
+          Automatically created before every Replace import. Stored locally in <code>data/backups/</code>.
         </div>
         <div id="safety-backups-list">
-          <div style="font-size:0.7rem;color:var(--text-3)">
-            <button class="btn btn-ghost btn-sm" onclick="loadSafetyBackups()">
-              Load safety backups
-            </button>
-          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadSafetyBackups()">Load safety backups</button>
         </div>
       </div>
     </div>
   `;
-}
-
-
-// ── EXPORT ────────────────────────────────────────────────────────────────────
-
-async function downloadBackup() {
-  const scope    = document.getElementById('backup-scope')?.value || 'full';
-  const password = document.getElementById('backup-password')?.value || '';
-  const statusEl = document.getElementById('backup-status');
-
-  if (statusEl) statusEl.textContent = 'Creating backup...';
-
-  try {
-    // Fetch as blob for file download
-    const response = await fetch('/api/backup/export', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ scope, password: password || null }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Export failed');
-    }
-
-    // Get filename from Content-Disposition header
-    const disposition = response.headers.get('Content-Disposition') || '';
-    const nameMatch   = disposition.match(/filename="?([^";\n]+)"?/);
-    const filename    = nameMatch ? nameMatch[1] : `moneyright_backup.mrbackup`;
-
-    const blob = await response.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    const encrypted = password ? ' (encrypted)' : '';
-    if (statusEl) {
-      statusEl.textContent = `✓ Downloaded: ${filename}`;
-      statusEl.style.color = 'var(--green)';
-      setTimeout(() => {
-        if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
-      }, 4000);
-    }
-    showToast(`Backup downloaded${encrypted} ✓`, 'success');
-
-  } catch (e) {
-    if (statusEl) {
-      statusEl.textContent = `✗ ${e.message}`;
-      statusEl.style.color = 'var(--red)';
-    }
-    showToast(e.message, 'error');
-  }
-}
-
-
-// ── IMPORT ────────────────────────────────────────────────────────────────────
-
-let _backupFileContent = null;
-let _backupIsEncrypted = false;
-
-function handleBackupDrop(e) {
-  e.preventDefault();
-  const dropzone = document.getElementById('backup-dropzone');
-  if (dropzone) dropzone.style.borderColor = 'var(--border)';
-  const file = e.dataTransfer.files[0];
-  if (file) handleBackupFile(file);
-}
-
-async function handleBackupFile(file) {
-  if (!file) return;
-  if (!file.name.endsWith('.mrbackup')) {
-    showToast('Please select a .mrbackup file', 'error');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = async e => {
-    _backupFileContent = e.target.result;
-
-    // Quick parse to get metadata without decrypting
-    try {
-      const envelope = JSON.parse(_backupFileContent);
-      _backupIsEncrypted = envelope.encrypted || false;
-
-      // Update dropzone
-      const dz = document.getElementById('backup-dropzone');
-      if (dz) {
-        dz.style.borderColor  = 'var(--green)';
-        dz.innerHTML = `<div style="color:var(--green);font-size:0.9rem">✓ ${file.name}</div>`;
-      }
-
-      // Show file info
-      const infoEl = document.getElementById('backup-file-info');
-      const nameEl = document.getElementById('backup-file-name');
-      const metaEl = document.getElementById('backup-file-meta');
-      if (infoEl) infoEl.style.display = 'block';
-      if (nameEl) nameEl.textContent = file.name;
-      if (metaEl) {
-        const date = envelope.created_at
-          ? new Date(envelope.created_at).toLocaleString() : 'Unknown';
-        metaEl.innerHTML = `
-          Scope: <strong>${envelope.scope || 'unknown'}</strong> ·
-          Created: <strong>${date}</strong> ·
-          App version: <strong>v${envelope.app_version || '?'}</strong> ·
-          Encrypted: <strong>${_backupIsEncrypted ? '🔒 Yes' : '🔓 No'}</strong>
-        `;
-      }
-
-      // Show password field if encrypted
-      const pwRow = document.getElementById('backup-import-pw-row');
-      if (pwRow) pwRow.style.display = _backupIsEncrypted ? 'block' : 'none';
-
-      // If not encrypted, validate immediately
-      if (!_backupIsEncrypted) {
-        await validateBackupFile();
-      }
-
-    } catch (err) {
-      showToast('Could not read backup file — may be corrupted', 'error');
-    }
-  };
-  reader.readAsText(file);
-}
-
-async function validateBackupFile() {
-  if (!_backupFileContent) return;
-
-  const password = _backupIsEncrypted
-    ? (document.getElementById('backup-import-password')?.value || '')
-    : '';
-
-  const statusEl = document.getElementById('backup-import-status');
-  const importBtn = document.getElementById('backup-import-btn');
-
-  if (statusEl) statusEl.textContent = 'Validating...';
-
-  try {
-    const formData = new FormData();
-    formData.append('file', new Blob([_backupFileContent], {type: 'application/octet-stream'}),
-                    'backup.mrbackup');
-    if (password) formData.append('password', password);
-
-    const resp   = await fetch('/api/backup/validate', { method: 'POST', body: formData });
-    const result = await resp.json();
-
-    if (result.valid && result.decrypted) {
-      const total = result.total_records || 0;
-      const tables = Object.entries(result.record_counts || {})
-        .map(([t, n]) => `${t}: ${n}`)
-        .join(' · ');
-
-      if (statusEl) {
-        statusEl.innerHTML = `<span style="color:var(--green)">
-          ✓ Valid — ${total} records across ${result.tables?.length || 0} tables
-        </span>`;
-      }
-
-      // Show table breakdown as tooltip/detail
-      const metaEl = document.getElementById('backup-file-meta');
-      if (metaEl && tables) {
-        metaEl.innerHTML += `<br><span style="font-size:0.65rem">${tables}</span>`;
-      }
-
-      if (importBtn) importBtn.style.display = 'block';
-    } else if (result.valid && !result.decrypted) {
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--yellow)">
-        Enter the decryption password above
-      </span>`;
-      if (importBtn) importBtn.style.display = 'none';
-    } else {
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">
-        ✗ ${result.error || 'Invalid backup'}
-      </span>`;
-      if (importBtn) importBtn.style.display = 'none';
-    }
-  } catch (e) {
-    if (statusEl) statusEl.textContent = `Error: ${e.message}`;
-  }
-}
-
-async function importBackup() {
-  if (!_backupFileContent) return;
-
-  const mode     = document.querySelector('input[name="import-mode"]:checked')?.value || 'merge';
-  const password = _backupIsEncrypted
-    ? (document.getElementById('backup-import-password')?.value || '')
-    : '';
-
-  // Extra confirm for replace mode
-  if (mode === 'replace') {
-    const confirmed = confirm(
-      '⚠ REPLACE MODE\n\n' +
-      'This will WIPE all existing data and restore from the backup.\n' +
-      'A safety backup will be created first in data/backups/\n\n' +
-      'Are you sure you want to continue?'
-    );
-    if (!confirmed) return;
-  }
-
-  const statusEl  = document.getElementById('backup-import-status');
-  const importBtn = document.getElementById('backup-import-btn');
-  if (statusEl) statusEl.textContent = 'Importing...';
-  if (importBtn) importBtn.disabled = true;
-
-  try {
-    const formData = new FormData();
-    formData.append('file', new Blob([_backupFileContent], {type: 'application/octet-stream'}),
-                    'backup.mrbackup');
-    formData.append('mode', mode);
-    if (password) formData.append('password', password);
-
-    const resp   = await fetch('/api/backup/import', { method: 'POST', body: formData });
-    const result = await resp.json();
-
-    if (result.ok) {
-      const msg = `✓ Imported ${result.records_imported} records · ` +
-                  `${result.records_skipped} skipped · ` +
-                  `${result.tables_restored} tables`;
-
-      if (statusEl) {
-        statusEl.innerHTML = `<span style="color:var(--green)">${msg}</span>`;
-      }
-      showToast(`Import complete — ${result.records_imported} records restored`, 'success');
-
-      if (result.warnings?.length) {
-        console.warn('Import warnings:', result.warnings);
-        showToast(`${result.warnings.length} table(s) had warnings — check console`, '');
-      }
-
-      // Reload the page after 2s so data reflects
-      setTimeout(() => window.location.reload(), 2000);
-
-    } else {
-      throw new Error(result.error || 'Import failed');
-    }
-  } catch (e) {
-    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
-    showToast(e.message, 'error');
-  } finally {
-    if (importBtn) importBtn.disabled = false;
-  }
-}
-
-
-// ── SAFETY BACKUPS ────────────────────────────────────────────────────────────
-
-async function loadSafetyBackups() {
-  const el = document.getElementById('safety-backups-list');
-  if (!el) return;
-  el.innerHTML = '<div style="font-size:0.7rem;color:var(--text-3)">Loading...</div>';
-
-  try {
-    const backups = await api.get('/backup/list');
-    if (!backups.length) {
-      el.innerHTML = '<div style="font-size:0.7rem;color:var(--text-3)">No safety backups yet</div>';
-      return;
-    }
-
-    el.innerHTML = backups.map(b => `
-      <div style="display:flex;justify-content:space-between;align-items:center;
-                  padding:6px 0;border-bottom:1px solid var(--border);font-size:0.72rem">
-        <div>
-          <span style="color:var(--text);font-family:var(--font-mono)">${b.filename}</span>
-          <span style="color:var(--text-3);margin-left:8px">${b.size_kb} KB</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="color:var(--text-3);font-size:0.65rem">
-            ${new Date(b.created).toLocaleString()}
-          </span>
-          <a href="/api/backup/download-local/${encodeURIComponent(b.filename)}"
-             class="btn btn-ghost btn-sm" style="font-size:0.65rem"
-             download="${b.filename}">
-            ↓
-          </a>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    el.innerHTML = `<div style="font-size:0.7rem;color:var(--red)">${e.message}</div>`;
-  }
 }

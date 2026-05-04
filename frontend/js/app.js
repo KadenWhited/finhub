@@ -6,8 +6,6 @@ fetch('/api/auth/check')
     if (!d.authenticated) window.location.href = '/login';
   });
 
-initNavCustomize();
-
 const pages = {
   dashboard: { render: renderDashboard },
   trades: { render: renderTrades },
@@ -28,6 +26,8 @@ const pages = {
 };
 
 let currentPage = 'dashboard';
+
+initNavCustomize();
 
 function navigateTo(page) {
   if (!pages[page]) return;

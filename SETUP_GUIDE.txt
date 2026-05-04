@@ -1,0 +1,55 @@
+═══════════════════════════════════════════════════
+  MONEY RIGHT — Personal Finance Hub  v1.5.2
+═══════════════════════════════════════════════════
+
+QUICK START
+───────────
+1. Double-click MoneyRight.exe
+2. Your browser opens automatically
+3. Set a password and click Save & Launch
+4. Done — you're running at http://localhost:5000
+
+Keep the black console window open while using the app.
+Close it to stop the app.
+
+
+YOUR DATA
+─────────
+Everything is stored locally on your computer.
+Nothing is sent to any server except APIs you set up.
+
+Database location: data\finance_hub.db (next to the .exe)
+Back up your data: Settings → Backup & Restore → Export
+
+
+OPTIONAL API KEYS (free)
+─────────────────────────
+CoinGecko — live crypto prices
+  → coingecko.com/en/api/pricing → Demo plan → free
+
+Kraken — auto-sync your crypto trades
+  → kraken.com/u/security/api → read-only key
+
+Gmail — parse bank transaction emails automatically
+  → myaccount.google.com/apppasswords
+
+
+TROUBLESHOOTING
+───────────────
+App won't open:
+  Make sure nothing else is using port 5000.
+
+Browser doesn't open automatically:
+  Go to http://localhost:5000 manually.
+
+Forgot your app password:
+  Delete the .env file next to MoneyRight.exe
+  and restart — the setup wizard will run again.
+  Your financial data is safe in the data\ folder.
+
+
+GETTING HELP
+────────────
+github.com/KadenWhited/money-right
+
+═══════════════════════════════════════════════════
