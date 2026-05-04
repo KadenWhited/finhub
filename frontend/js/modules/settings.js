@@ -243,6 +243,13 @@ function renderSettingsView(el, s) {
       </button>
 
     </div>
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);
+             display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="pauseApp()"
+        style="color:var(--yellow)">⏸ Pause Background Jobs</button>
+      <button class="btn btn-ghost btn-sm" onclick="quitApp()"
+        style="color:var(--red)">⏻ Quit Money Right</button>
+    </div>
 
     ${renderBackupCard()}
   `;
@@ -533,4 +540,30 @@ function renderBackupCard() {
       </div>
     </div>
   `;
+}
+
+async function pauseApp() {
+  const status = await api.get('/system/status');
+  if (status.paused) {
+    await api.post('/system/resume', {});
+    showToast('Background jobs resumed ✓', 'success');
+  } else {
+    await api.post('/system/pause', {});
+    showToast('Background jobs paused — alerts and syncs stopped', '');
+  }
+}
+
+async function quitApp() {
+  if (!confirm('Fully stop Money Right?\n\nThis will close the server. You can restart by running MoneyRight.exe again.')) return;
+  try {
+    await api.post('/system/quit', {});
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;
+                  height:100vh;background:#0a0a0f;color:#606080;
+                  font-family:monospace;flex-direction:column;gap:12px">
+        <div style="font-size:1.2rem;color:#7c6af7">⬡ MONEY RIGHT</div>
+        <div>Server stopped. Close this tab.</div>
+        <div style="font-size:0.72rem">Run MoneyRight.exe to restart.</div>
+      </div>`;
+  } catch(e) { /* server already down */ }
 }

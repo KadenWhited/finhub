@@ -12,6 +12,12 @@ QUICK START
 Keep the black console window open while using the app.
 Close it to stop the app.
 
+STOPPING THE APP
+────────────────
+Money Right runs in your system tray (bottom-right near the clock).
+Right-click the tray icon → Quit to stop the app.
+Double-click the tray icon to reopen the browser.
+
 
 YOUR DATA
 ─────────

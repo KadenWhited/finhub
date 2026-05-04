@@ -1,8 +1,7 @@
 from flask import Flask, send_from_directory, request, session, jsonify
 from flask_cors import CORS
-from dotenv import load_dotenv
 from datetime import timedelta
-load_dotenv()
+import threading as _threading
 import os
 import sys
 
@@ -13,15 +12,22 @@ def _get_base_dir() -> str:
 
 BASE_DIR = _get_base_dir()
 
+from dotenv import load_dotenv
+_env_path = os.path.join(BASE_DIR, '.env')
+if os.path.exists(_env_path):
+    load_dotenv(_env_path, override=False)
+
 def _get_frontend_dir() -> str:
     env_override = os.environ.get('MONEYRIGHT_FRONTEND_DIR')
     if env_override and os.path.isdir(env_override):
         return env_override
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, 'frontend')
+        return os.path.join(sys._MEIPASS, 'frontend') # type: ignore[attr-defined]
     return os.path.join(BASE_DIR, 'frontend')
 
 FRONTEND_DIR = _get_frontend_dir()
+print(f"[startup] FRONTEND_DIR: {FRONTEND_DIR}")
+print(f"[startup] login.html exists: {os.path.exists(os.path.join(FRONTEND_DIR, 'login.html'))}")
 
 # Visible
 from backend.models.database import init_db
@@ -50,13 +56,16 @@ from backend.routes.push import push_bp
 from backend.routes.connections import connections_bp
 from backend.routes.coinbase import coinbase_bp
 from backend.routes.email_parser import email_bp
+from backend.routes.backup import backup_bp
 
 from backend.services.ingestion.scheduler import init_scheduler, shutdown_scheduler
 
 app = Flask(
     __name__,
-    static_folder=os.path.join(FRONTEND_DIR),
-    static_url_path='',
+    #static_folder=os.path.join(FRONTEND_DIR),
+    #static_url_path='',
+    static_folder=None,
+    static_url_path=None,
 )
 
 with app.app_context():
@@ -86,10 +95,13 @@ app.secret_key = secret
 
 def _read_version() -> str:
     try:
-        with open(os.path.join(os.path.dirname(__file__), 'version.txt')) as f:
+        path = os.path.join(BASE_DIR, 'version.txt')
+        if not os.path.exists(path) and hasattr(sys, '_MEIPASS'):
+            path = os.path.join(sys._MEIPASS, 'version.txt')  # type: ignore[attr-defined]
+        with open(path) as f:
             return f.read().strip()
     except Exception:
-        return '1.0.0'
+        return '1.5.3'
 
 APP_VERSION = _read_version()
 
@@ -117,6 +129,7 @@ app.register_blueprint(coinbase_bp,     url_prefix='/api/coinbase')
 app.register_blueprint(predictions_bp,  url_prefix='/api/predictions')
 app.register_blueprint(email_bp,        url_prefix='/api/email')
 app.register_blueprint(sentiment_bp,    url_prefix='/api/sentiment')
+app.register_blueprint(backup_bp,       url_prefix='/api/backup')
 
 
 # ── Auth middleware ───────────────────────────────────────────────────────────
@@ -151,23 +164,39 @@ def get_version():
     return jsonify({'version': APP_VERSION})
 
 # ── Static routes ─────────────────────────────────────────────────────────────
-@app.route('/')
+@app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path=''):
-    # Auth check
+    from flask import send_from_directory
+    
+    public_files = ('manifest.json', 'sw.js', 'favicon.ico', 'robots.txt')
+    
     if path.startswith('api/'):
-        return  # Let API routes handle it
+        from flask import abort
+        abort(404)
 
-    # Serve login page if not authenticated
-    from flask import session, send_from_directory
-    if path == 'login' or path == 'login.html':
+    if path in ('login', 'login.html'):
         return send_from_directory(FRONTEND_DIR, 'login.html')
 
-    # Check auth
+    if path in public_files or path.startswith('assets/'):
+        try:
+            return send_from_directory(FRONTEND_DIR, path)
+        except Exception:
+            from flask import abort
+            abort(404)
+
     if not session.get('authenticated'):
-        return send_from_directory(FRONTEND_DIR, 'login.html')
+        app_password = os.environ.get('APP_PASSWORD')
+        if app_password:
+            return send_from_directory(FRONTEND_DIR, 'login.html')
 
-    # Serve index for all other routes (SPA)
+    if path and '.' in path:
+        try:
+            return send_from_directory(FRONTEND_DIR, path)
+        except Exception:
+            from flask import abort
+            abort(404)
+
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 
@@ -176,3 +205,42 @@ if __name__ == '__main__':
     import os
     debug = os.environ.get('FLASK_ENV') == 'development'
     app.run(debug=debug, host='127.0.0.1', port=5000)
+
+# ──   System   ───────────────────────────────────────────────────────────────
+_scheduler_paused = False
+
+@app.route('/api/system/pause', methods=['POST'])
+def pause_system():
+    """Pause background jobs (alerts, syncs) without stopping the server."""
+    global _scheduler_paused
+    from backend.services.ingestion.scheduler import get_scheduler
+    sched = get_scheduler()
+    if sched and sched.running:
+        sched.pause()
+    _scheduler_paused = True
+    return jsonify({'ok': True, 'paused': True})
+
+@app.route('/api/system/resume', methods=['POST'])
+def resume_system():
+    global _scheduler_paused
+    from backend.services.ingestion.scheduler import get_scheduler
+    sched = get_scheduler()
+    if sched and sched.running:
+        sched.resume()
+    _scheduler_paused = False
+    return jsonify({'ok': True, 'paused': False})
+
+@app.route('/api/system/status', methods=['GET'])
+def system_status():
+    return jsonify({'paused': _scheduler_paused})
+
+@app.route('/api/system/quit', methods=['POST'])
+def quit_app():
+    """Fully stop the server."""
+    import threading
+    def _stop():
+        import time, os
+        time.sleep(1)
+        os._exit(0)
+    threading.Thread(target=_stop, daemon=True).start()
+    return jsonify({'ok': True, 'message': 'Shutting down...'})

@@ -31,6 +31,7 @@ initNavCustomize();
 
 function navigateTo(page) {
   if (!pages[page]) return;
+  if (typeof buildNav === 'function') setTimeout(buildNav, 0);
   if (currentPage === 'market') stopMarketAutoRefresh();
   if (currentPage === 'news' && typeof _newsRefreshTimer !== 'undefined') {
     clearInterval(_newsRefreshTimer);

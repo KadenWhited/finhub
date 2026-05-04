@@ -97,40 +97,39 @@ function buildNav() {
   const ul = document.querySelector('#sidebar .nav-links');
   if (!ul) return;
 
-  // Determine current active page
-  const activePage = document.querySelector('.nav-link.active')?.dataset.page || 'dashboard';
+  // Use the app's currentPage variable, not the DOM — DOM gets reset on rebuild
+  const activePage = (typeof currentPage !== 'undefined' ? currentPage : null)
+                  || document.querySelector('.page.active')?.id?.replace('page-', '')
+                  || 'dashboard';
 
   ul.innerHTML = _navConfig.map(item => {
-    const hidden  = item.hidden && !item.locked;
+    const hidden   = item.hidden && !item.locked;
     const isActive = item.page === activePage;
-
-    if (hidden) return ''; // Don't render hidden items
+    if (hidden) return '';
 
     return `
       <li data-page-item="${item.page}"
           draggable="${_navEditMode && !item.locked ? 'true' : 'false'}"
           class="${_navEditMode && !item.locked ? 'nav-draggable' : ''}
                  ${_navEditMode && item.locked   ? 'nav-locked'   : ''}">
-        <a href="#" data-page="${item.page}"
+        <a data-page="${item.page}"
            class="nav-link ${isActive ? 'active' : ''}"
-           onclick="${_navEditMode ? 'return false' : ''}">
+           style="cursor:pointer">
           <span class="nav-icon">${item.icon}</span>
           <span class="nav-label">${item.label}</span>
-          ${_navEditMode && !item.locked ? `
-            <span class="nav-drag-handle" title="Drag to reorder">⠿</span>
-          ` : ''}
-          ${_navEditMode && item.locked ? `
-            <span style="font-size:0.6rem;color:var(--text-3);margin-left:auto">🔒</span>
-          ` : ''}
+          ${_navEditMode && !item.locked
+            ? `<span class="nav-drag-handle" title="Drag to reorder">⠿</span>`
+            : ''}
+          ${_navEditMode && item.locked
+            ? `<span style="font-size:0.6rem;color:var(--text-3);margin-left:auto">🔒</span>`
+            : ''}
         </a>
       </li>`;
   }).join('');
 
   if (_navEditMode) {
     _attachDragHandlers(ul);
-    _attachClickHandlers(ul);
   } else {
-    // Re-attach normal navigation
     ul.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', e => {
         e.preventDefault();
@@ -359,29 +358,36 @@ function _addTouchDrag(li) {
 async function initNavCustomize() {
   await loadNavConfig();
 
-  // Add edit button to sidebar footer
   const footer = document.querySelector('.sidebar-footer');
   if (footer) {
+
+    const versionEl  = footer.querySelector('.version, #app-version');
+    const signOutBtn = footer.querySelector('button');
+
+    const panel = document.createElement('div');
+    panel.id = 'nav-visibility-panel';
+    panel.style.cssText = `
+      display:none;
+      border-bottom:1px solid var(--border);
+      padding-bottom:6px;
+      margin-bottom:4px;
+      max-height:260px;
+      overflow-y:auto;
+    `;
+
     const editBtn = document.createElement('button');
     editBtn.id        = 'nav-edit-btn';
     editBtn.className = 'btn btn-ghost btn-sm';
-    editBtn.style.cssText = 'width:100%;margin-top:6px;color:var(--text-3);font-size:0.7rem';
-    editBtn.textContent = '✎ Edit';
+    editBtn.style.cssText = 'width:100%;color:var(--text-3);font-size:0.7rem;margin-bottom:6px';
+    editBtn.textContent = '✎ Edit Nav';
     editBtn.onclick   = toggleNavEdit;
-    footer.appendChild(editBtn);
 
-    // Visibility panel — hidden by default
-    const panel = document.createElement('div');
-    panel.id          = 'nav-visibility-panel';
-    panel.style.cssText = `
-      display:none;
-      border-top:1px solid var(--border);
-      padding-top:8px;
-      margin-top:8px;
-      max-height:300px;
-      overflow-y:auto;
-    `;
-    footer.insertBefore(panel, editBtn);
+    // Empty footer and rebuild in correct order
+    footer.innerHTML = '';
+    footer.appendChild(panel);
+    footer.appendChild(editBtn);
+    if (versionEl) footer.appendChild(versionEl);
+    if (signOutBtn) footer.appendChild(signOutBtn);
   }
 
   document.querySelectorAll('#mobile-nav .mob-link').forEach(link => {
