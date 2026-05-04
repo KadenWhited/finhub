@@ -927,3 +927,16 @@ tbody td {
 .stat-card[style*="cursor:pointer"]:hover .stat-label {
   color: var(--accent);
 }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.25; }
+}
+.fng-dot-group:hover .fng-tooltip { opacity: 1 !important; }
+.fng-dot-group:hover circle:first-child { r: 5.5; }
+
+@media (max-width: 768px) {
+  #sentiment-card-content > div {
+    grid-template-columns: 1fr !important;
+  }
+}

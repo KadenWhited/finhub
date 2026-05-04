@@ -412,7 +412,7 @@ def _check_financial_alerts(db, settings):
             for acc in accounts:
                 if not acc['credit_limit']:
                     continue
-                bal  = acc['current_balance'] or 0
+                bal  = acc['balance'] or 0
                 util = (bal / acc['credit_limit']) * 100
                 u_score = score_credit_util(util, threshold)
                 if u_score > 0:
@@ -464,6 +464,24 @@ def _check_news_sentiment(db, settings):
     except Exception as e:
         print(f"Sentiment check error: {e}")
 
+def _run_financial_alerts(app):
+    try:
+        with app.app_context():
+            from backend.models.database import get_db
+            from backend.services.notifications import (
+                _load_settings, _check_financial_alerts,
+                _check_news_sentiment, _check_daily_summary,
+                _check_fear_greed_alert  # ← add this import
+            )
+            db = get_db()
+            settings = _load_settings(db)
+            _check_financial_alerts(db, settings)
+            _check_news_sentiment(db, settings)
+            _check_daily_summary(db, settings)
+            _check_fear_greed_alert(db, settings)  # ← add this call
+            db.close()
+    except Exception as e:
+        print(f"[scheduler] financial_alerts error: {e}")
 
 def _check_daily_summary(db, settings):
     """Send a morning digest if it's time."""
@@ -586,6 +604,73 @@ def _check_alerts(app):
 
             iteration += 1
             time.sleep(60)
+
+def _check_fear_greed_alert(db, settings: dict):
+    """Fire alert when Fear & Greed hits extreme zones."""
+    if settings.get('alert_type_news_sentiment_enabled', '1') != '1':
+        return
+    try:
+        import requests as req
+        resp = req.get(
+            'https://api.alternative.me/fng/',
+            params={'limit': 2},
+            timeout=8
+        )
+        data = resp.json().get('data', [])
+        if not data:
+            return
+
+        current = int(data[0].get('value', 50))
+        prev    = int(data[1].get('value', 50)) if len(data) > 1 else current
+        label   = data[0].get('value_classification', '')
+
+        # Only alert on zone transitions, not sustained readings
+        def _zone(v):
+            if v <= 20: return 'extreme_fear'
+            if v <= 44: return 'fear'
+            if v <= 55: return 'neutral'
+            if v <= 75: return 'greed'
+            return 'extreme_greed'
+
+        curr_zone = _zone(current)
+        prev_zone = _zone(prev)
+
+        if curr_zone == prev_zone:
+            return  # No zone change, no alert
+
+        from backend.services.notifications import PRIORITY, dispatch_alert
+
+        if curr_zone == 'extreme_fear':
+            dispatch_alert(
+                alert_type   = 'news_sentiment',
+                title        = f'$RIGHT: Fear & Greed — EXTREME FEAR ({current})',
+                message      = f'Index dropped to {current} ({label}). Historically a strong buying opportunity.',
+                priority_int = PRIORITY['high'],
+                settings     = settings,
+                cooldown_key = 'fng_extreme_fear',
+            )
+        elif curr_zone == 'extreme_greed':
+            dispatch_alert(
+                alert_type   = 'news_sentiment',
+                title        = f'$RIGHT: Fear & Greed — EXTREME GREED ({current})',
+                message      = f'Index reached {current} ({label}). Market may be overheated — consider taking profits.',
+                priority_int = PRIORITY['medium'],
+                settings     = settings,
+                cooldown_key = 'fng_extreme_greed',
+            )
+        elif prev_zone in ('extreme_fear', 'extreme_greed'):
+            # Recovery from extreme zone
+            dispatch_alert(
+                alert_type   = 'news_sentiment',
+                title        = f'$RIGHT: Fear & Greed — Recovering to {label} ({current})',
+                message      = f'Sentiment shifted from {prev_zone.replace("_"," ")} to {label}.',
+                priority_int = PRIORITY['low'],
+                settings     = settings,
+                cooldown_key = 'fng_recovery',
+            )
+
+    except Exception as e:
+        print(f"[fng_alert] Error: {e}")
 
 
 # ─────────────────────────────────────────

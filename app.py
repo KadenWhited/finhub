@@ -14,6 +14,8 @@ from backend.routes.checkbook import checkbook_bp
 from backend.routes.credit import credit_bp
 from backend.routes.budget import budget_bp
 from backend.routes.gambling import gambling_bp
+from backend.routes.predictions import predictions_bp
+from backend.routes.market_sentiment import sentiment_bp
 from backend.routes.dashboard import dashboard_bp
 from backend.routes.notes import notes_bp
 from backend.routes.news import news_bp
@@ -29,8 +31,7 @@ from backend.routes.alerts import alerts_bp
 from backend.routes.push import push_bp
 from backend.routes.connections import connections_bp
 from backend.routes.coinbase import coinbase_bp
-from backend.routes.predictions import predictions_bp
-
+from backend.routes.email_parser import email_bp
 
 from backend.services.ingestion.scheduler import init_scheduler, shutdown_scheduler
 
@@ -80,7 +81,9 @@ app.register_blueprint(alerts_bp,       url_prefix='/api/alerts')
 app.register_blueprint(push_bp,         url_prefix='/api/push')
 app.register_blueprint(connections_bp,  url_prefix='/api/connections')
 app.register_blueprint(coinbase_bp,     url_prefix='/api/coinbase')
-app.register_blueprint(predictions_bp, url_prefix='/api/predictions')
+app.register_blueprint(predictions_bp,  url_prefix='/api/predictions')
+app.register_blueprint(email_bp,        url_prefix='/api/email')
+app.register_blueprint(sentiment_bp,    url_prefix='/api/sentiment')
 
 
 # ── Auth middleware ───────────────────────────────────────────────────────────

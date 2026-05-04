@@ -214,15 +214,14 @@ def _run_kalshi_sync(app):
 
 
 def _run_email_sync(app):
-    """Phase 4 — stub until email parser is built."""
     if not os.environ.get('GMAIL_APP_PASSWORD'):
-        return  # Not configured, skip silently
+        return
     try:
         with app.app_context():
             from backend.services.ingestion.email_parser import sync_emails
             sync_emails()
     except ImportError:
-        pass  # Service not built yet
+        pass
     except Exception as e:
         print(f"[scheduler] email_sync error: {e}")
         _update_connection_status(app, 'gmail', 'error', str(e))

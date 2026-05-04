@@ -344,6 +344,12 @@ def init_db():
     for svc in ('kraken', 'kalshi', 'gmail'):
         c.execute("INSERT OR IGNORE INTO connections (service) VALUES (?)", (svc,))
 
+    try:
+        c.execute("ALTER TABLE checkbook ADD COLUMN income_stream TEXT")
+    except Exception:
+        pass
+    c.execute("INSERT OR IGNORE INTO connections (service) VALUES ('gmail')")
+
     conn.commit()
     conn.close()
     print(f"✅ Database initialized at {DB_PATH}")

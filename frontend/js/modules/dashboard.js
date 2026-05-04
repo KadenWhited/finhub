@@ -68,11 +68,12 @@ async function renderDashboard() {
       </div>
     </div>
 
-    <!-- Top news strip -->
+    <!-- Top news + sentiment strip -->
     <div id="dash-news-strip" style="margin-bottom:20px"></div>
 
     <!-- Module cards with sparklines -->
     <div class="dash-modules">
+
       <div class="dash-module" onclick="navigateTo('trades')">
         <div class="module-header">
           <div class="module-title">Trade Journal</div>
@@ -142,24 +143,41 @@ async function renderDashboard() {
         </div>
       </div>
 
+      <!-- Predictions card -->
+      <div class="dash-module" onclick="navigateTo('predictions')">
+        <div class="module-header">
+          <div class="module-title">Predictions</div>
+          <span class="module-icon" style="color:var(--yellow)">◈</span>
+        </div>
+        <div id="dash-predictions-pnl" class="module-pnl" style="color:var(--text-3)">—</div>
+        <div class="module-meta">
+          <div class="meta-item">Open <span id="dash-pred-open">—</span></div>
+          <div class="meta-item">Win rate <span id="dash-pred-wr">—</span></div>
+        </div>
+      </div>
+
+      <!-- Market card with BTC sparkline -->
       <div class="dash-module" onclick="navigateTo('market')">
         <div class="module-header">
           <div class="module-title">Market</div>
           <span class="module-icon" style="color:var(--cyan)">◉</span>
         </div>
-        <div style="font-size:0.8rem;color:var(--text-2);margin:8px 0 12px">Live crypto prices</div>
+        <div id="dash-market-btc" class="module-pnl neutral" style="font-size:1rem">—</div>
+        <div class="spark-wrap"><canvas id="dash-spark-btc" data-height="55"></canvas></div>
         <div class="module-meta">
           <div class="meta-item">Watched <span id="dash-wl-count">—</span></div>
           <div class="meta-item">Alerts <span id="dash-alert-count">—</span></div>
         </div>
       </div>
 
+      <!-- Analytics card with net worth sparkline -->
       <div class="dash-module" onclick="navigateTo('charts')">
         <div class="module-header">
           <div class="module-title">Analytics</div>
           <span class="module-icon" style="color:var(--accent)">╱</span>
         </div>
-        <div style="font-size:0.8rem;color:var(--text-2);margin:8px 0 12px">Charts & trends</div>
+        <div id="dash-analytics-nw" class="module-pnl neutral" style="font-size:1rem">—</div>
+        <div class="spark-wrap"><canvas id="dash-spark-nw-mini" data-height="55"></canvas></div>
         <div class="module-meta">
           <div class="meta-item">Risk/trade <span>$${settings.risk_per_trade||'—'}</span></div>
           <div class="meta-item">Max pos <span>${settings.max_open_positions||3}</span></div>
@@ -172,30 +190,86 @@ async function renderDashboard() {
   // Net worth hero
   renderNetWorthHero('nw-hero-container');
 
-  // Sparklines
+  // Sparklines + secondary data
   requestAnimationFrame(() => _mountDashSparklines());
 
-  // Watchlist pill
+  // Async data loaders
   _loadDashWatchlistCount();
   _loadDashBudget();
+  _loadDashPredictions();
 }
+
+// ─────────────────────────────────────────
+//  SPARKLINES
+// ─────────────────────────────────────────
 
 async function _mountDashSparklines() {
   try {
-    const [tradeChart, cashChart, gambChart] = await Promise.all([
+    const [tradeChart, cashChart, gambChart, nwChart, btcChart] = await Promise.all([
       api.get('/charts/trades?range=1m').catch(() => null),
       api.get('/charts/spending?range=1m').catch(() => null),
       api.get('/charts/gambling?range=1m').catch(() => null),
+      api.get('/charts/networth').catch(() => null),
+      api.get('/charts/crypto/bitcoin?range=1m').catch(() => null),
     ]);
 
     if (tradeChart?.cumulative_pnl?.length > 1)
       _spark('dash-spark-trades', tradeChart.cumulative_pnl);
+
     if (cashChart?.balance?.length > 1)
       _spark('dash-spark-cash', cashChart.balance, '#00d2ff');
+
     if (gambChart?.cumulative_pnl?.length > 1)
       _spark('dash-spark-gamble', gambChart.cumulative_pnl);
+
+    //Spending Trend
+    if (cashChart?.income?.length > 1 || cashChart?.expenses?.length > 1) {
+      const incomePts   = cashChart.income   || [];
+      const expensePts  = cashChart.expenses || [];
+
+      // Show current month net (income - expenses)
+      const totalIn  = incomePts.reduce((s, p) => s + (p.v || 0), 0);
+      const totalOut = expensePts.reduce((s, p) => s + (p.v || 0), 0);
+      const net      = totalIn - totalOut;
+
+      const nwEl = document.getElementById('dash-analytics-nw');
+      if (nwEl) {
+        nwEl.className = `module-pnl ${net >= 0 ? 'pos' : 'neg'}`;
+        nwEl.innerHTML = `
+          <span style="font-size:0.95rem">${net >= 0 ? '+' : ''}$${Math.abs(net).toFixed(0)}</span>
+          <span style="font-size:0.65rem;color:var(--text-3);margin-left:6px">30d net</span>
+        `;
+      }
+
+      // Use income sparkline (green) as the visual
+      if (incomePts.length > 1) {
+        _spark('dash-spark-nw-mini', incomePts, '#00e676');
+      }
+    }
+
+    // BTC sparkline for Market card
+    if (btcChart?.points?.length > 1) {
+      const pts   = btcChart.points;
+      const last  = pts[pts.length - 1].v;
+      const first = pts[0].v;
+      const chg   = ((last - first) / first * 100).toFixed(1);
+      const btcEl = document.getElementById('dash-market-btc');
+      if (btcEl) {
+        btcEl.innerHTML = `
+          <span style="font-size:0.95rem">
+            $${last.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+          </span>
+          <span style="font-size:0.72rem;margin-left:6px" class="${chg >= 0 ? 'pos' : 'neg'}">
+            ${chg >= 0 ? '+' : ''}${chg}%
+          </span>`;
+      }
+      _spark('dash-spark-btc', pts, '#00d2ff');
+    }
+
   } catch (e) { /* sparklines optional */ }
-  loadDashNewsStrip()
+
+  // News + sentiment strip loads after sparklines
+  loadDashNewsStrip();
 }
 
 function _spark(id, points, color) {
@@ -214,6 +288,10 @@ function _spark(id, points, color) {
   _dashCharts[id] = chart;
 }
 
+// ─────────────────────────────────────────
+//  DATA LOADERS
+// ─────────────────────────────────────────
+
 async function _loadDashWatchlistCount() {
   try {
     const wl = await api.get('/market/watchlist');
@@ -229,6 +307,149 @@ async function _loadDashWatchlistCount() {
   } catch (e) { /* ignore */ }
 }
 
+async function _loadDashPredictions() {
+  try {
+    const stats = await api.get('/predictions/stats');
+    const pnl   = stats.total_pnl_dollars || 0;
+    const open  = stats.open_positions    || 0;
+    const wr    = stats.overall_win_rate  || 0;
+
+    const pnlEl = document.getElementById('dash-predictions-pnl');
+    const opEl  = document.getElementById('dash-pred-open');
+    const wrEl  = document.getElementById('dash-pred-wr');
+
+    if (pnlEl) {
+      pnlEl.className   = `module-pnl ${pnl >= 0 ? 'pos' : 'neg'}`;
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`;
+    }
+    if (opEl) opEl.textContent = open;
+    if (wrEl) wrEl.innerHTML = `<span class="${wr >= 50 ? 'pos' : 'neg'}">${wr}%</span>`;
+  } catch (e) { /* predictions optional */ }
+}
+
+async function _loadDashBudget() {
+  try {
+    const [summary, recurring] = await Promise.all([
+      api.get('/budget/summary'),
+      api.get('/budget/recurring'),
+    ]);
+    const cur = summary.current_month || {};
+    const net = cur.net || 0;
+    const netEl = document.getElementById('dash-budget-net');
+    const subEl = document.getElementById('dash-sub-cost');
+    const recEl = document.getElementById('dash-rec-cost');
+    if (netEl) {
+      netEl.className = `module-pnl ${net >= 0 ? 'pos' : 'neg'}`;
+      netEl.textContent = `${net >= 0 ? '+' : ''}$${Math.abs(net).toFixed(2)}`;
+    }
+    if (subEl) subEl.textContent = `$${(recurring.subscription_monthly_est||0).toFixed(2)}`;
+    if (recEl) recEl.textContent = `$${(recurring.recurring_monthly_est||0).toFixed(2)}`;
+  } catch (e) { /* ignore */ }
+}
+
+// ─────────────────────────────────────────
+//  NEWS + SENTIMENT STRIP
+// ─────────────────────────────────────────
+
+async function loadDashNewsStrip() {
+  const el = document.getElementById('dash-news-strip');
+  if (!el) return;
+
+  // Show skeleton immediately
+  el.innerHTML = `
+    <div class="card" style="padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">Top Headlines</div>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('news')" style="font-size:0.7rem">View all →</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${[1,2,3,4].map(() => `
+          <div style="padding:6px 0;border-bottom:1px solid var(--border);height:28px;
+                      background:var(--bg-3);border-radius:4px;
+                      animation:pulse 1.5s ease-in-out infinite;opacity:0.5"></div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card" style="padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:0.72rem;font-weight:600;color:var(--text);margin-bottom:14px;
+                  letter-spacing:0.05em;text-transform:uppercase;font-size:0.65rem;color:var(--text-3)">
+        Market Sentiment
+      </div>
+      <div id="sentiment-card-content">
+        <div style="font-size:0.7rem;color:var(--text-3)">Loading...</div>
+      </div>
+    </div>
+  `;
+
+  // Load sentiment immediately — doesn't depend on news
+  setTimeout(() => {
+    if (typeof renderSentimentCard === 'function') {
+      renderSentimentCard('sentiment-card-content');
+    }
+  }, 50);
+
+  // Load news in parallel
+  try {
+    const data     = await api.get('/news/?limit=4');
+    const articles = (data.articles || []).slice(0, 4);
+    const newsCard = el.querySelector('.card');
+    if (!newsCard) return;
+
+    if (!articles.length) {
+      newsCard.innerHTML = `
+        <div class="card-title" style="margin-bottom:8px">Top Headlines</div>
+        <div style="font-size:0.7rem;color:var(--text-3)">No headlines available</div>
+      `;
+      return;
+    }
+
+    newsCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">Top Headlines</div>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('news')" style="font-size:0.7rem">View all →</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${articles.map(a => `
+          <a href="${a.link}" target="_blank" rel="noopener noreferrer"
+            style="display:flex;justify-content:space-between;align-items:center;gap:12px;
+                   padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;
+                   color:var(--text);transition:color 0.15s"
+            onmouseover="this.style.color='var(--accent)'"
+            onmouseout="this.style.color='var(--text)'">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <div class="sentiment-dot sentiment-dot-${a.sentiment}"></div>
+              <span style="font-size:0.78rem;font-weight:500;overflow:hidden;
+                           text-overflow:ellipsis;white-space:nowrap">${a.title}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <span style="font-size:0.65rem;color:var(--text-3)">${a.source}</span>
+              <span style="font-size:0.65rem;color:var(--text-3)">${_dashFmtAge(a.age_hours)}</span>
+            </div>
+          </a>
+        `).join('')}
+      </div>
+    `;
+  } catch (e) {
+    const newsCard = el.querySelector('.card');
+    if (newsCard) newsCard.innerHTML = `
+      <div class="card-title" style="margin-bottom:8px">Top Headlines</div>
+      <div style="font-size:0.7rem;color:var(--text-3)">Could not load headlines</div>
+    `;
+  }
+}
+
+function _dashFmtAge(h) {
+  if (!h && h !== 0) return '';
+  h = parseFloat(h);
+  if (h < 1)  return `${Math.round(h*60)}m`;
+  if (h < 24) return `${Math.round(h)}h`;
+  return `${Math.round(h/24)}d`;
+}
+
+// ─────────────────────────────────────────
+//  CHART MODALS (from stat cards)
+// ─────────────────────────────────────────
+
 async function openCapitalChart() {
   openChartModal('Capital Growth', 'Trade P&L vs starting capital over time',
     lineCanvasBlock('modal-capital', 240));
@@ -240,7 +461,7 @@ async function openCapitalChart() {
 }
 
 async function openWinRateChart() {
-  openChartModal('Win / Loss by Coin', 'Net P&L per coin traded (bar = net result)',
+  openChartModal('Win / Loss by Coin', 'Net P&L per coin traded',
     barCanvasBlock('modal-winrate', 240));
   try {
     const trades = await api.get('/trades/');
@@ -278,72 +499,4 @@ async function openCreditTrendChart() {
       { label: 'Balance', color: '#ff4757', points: data.balance || [] }
     ], 'all', 240);
   } catch(e) { showToast(e.message, 'error'); }
-}
-
-async function loadDashNewsStrip() {
-  const el = document.getElementById('dash-news-strip');
-  if (!el) return;
-  try {
-    const data = await api.get('/news/?limit=4');
-    const articles = (data.articles || []).slice(0, 4);
-    if (!articles.length) { el.innerHTML = ''; return; }
-
-    el.innerHTML = `
-      <div class="card" style="padding:14px 16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div class="card-title" style="margin:0">Top Headlines</div>
-          <button class="btn btn-ghost btn-sm" onclick="navigateTo('news')" style="font-size:0.7rem">View all →</button>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          ${articles.map(a => `
-            <a href="${a.link}" target="_blank" rel="noopener noreferrer"
-              style="display:flex;justify-content:space-between;align-items:center;gap:12px;
-                     padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;
-                     color:var(--text);transition:color 0.15s"
-              onmouseover="this.style.color='var(--accent)'"
-              onmouseout="this.style.color='var(--text)'">
-              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-                <div class="sentiment-dot sentiment-dot-${a.sentiment}"></div>
-                <span style="font-size:0.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                  ${a.title}
-                </span>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-                <span style="font-size:0.65rem;color:var(--text-3)">${a.source}</span>
-                <span style="font-size:0.65rem;color:var(--text-3)">${_dashFmtAge(a.age_hours)}</span>
-              </div>
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  } catch (e) { el.innerHTML = ''; }
-}
-
-function _dashFmtAge(h) {
-  if (!h && h !== 0) return '';
-  h = parseFloat(h);
-  if (h < 1)  return `${Math.round(h*60)}m`;
-  if (h < 24) return `${Math.round(h)}h`;
-  return `${Math.round(h/24)}d`;
-}
-
-async function _loadDashBudget() {
-  try {
-    const [summary, recurring] = await Promise.all([
-      api.get('/budget/summary'),
-      api.get('/budget/recurring'),
-    ]);
-    const cur = summary.current_month || {};
-    const net = cur.net || 0;
-    const netEl = document.getElementById('dash-budget-net');
-    const subEl = document.getElementById('dash-sub-cost');
-    const recEl = document.getElementById('dash-rec-cost');
-    if (netEl) {
-      netEl.className = `module-pnl ${net >= 0 ? 'pos' : 'neg'}`;
-      netEl.textContent = `${net >= 0 ? '+' : ''}$${Math.abs(net).toFixed(2)}`;
-    }
-    if (subEl) subEl.textContent = `$${(recurring.subscription_monthly_est||0).toFixed(2)}`;
-    if (recEl) recEl.textContent = `$${(recurring.recurring_monthly_est||0).toFixed(2)}`;
-  } catch (e) { /* ignore — budget is optional */ }
 }

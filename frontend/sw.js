@@ -9,7 +9,7 @@
  *  - Background sync for queued API calls
  */
 
-const CACHE_NAME    = 'moneyright-v1';
+const CACHE_NAME    = 'moneyright-v2';
 const SYNC_TAG      = 'finhub-sync';
 const PUSH_TAG      = 'finhub-alert';
 
@@ -118,6 +118,13 @@ self.addEventListener('fetch', event => {
   // POST/PUT/DELETE API calls — queue if offline
   if (request.method !== 'GET' && path.startsWith('/api/')) {
     event.respondWith(handleMutation(request));
+    return;
+  }
+
+  // In sw.js, find the fetch handler and add this before the cache check:
+  const neverCache = ['/js/modules/sentiment.js', '/js/modules/dashboard.js'];
+  if (neverCache.some(p => event.request.url.includes(p))) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
