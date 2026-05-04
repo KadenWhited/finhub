@@ -29,10 +29,18 @@ async function renderDashboard() {
     <div class="page-header">
       <div>
         <div class="page-title">Dashboard</div>
-        <div class="page-subtitle">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+        <div class="page-subtitle">...</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="navigateTo('charts')">Full Analytics →</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="dash-edit-btn" class="btn btn-ghost btn-sm"
+          style="color:var(--text-3);font-size:0.7rem"
+          onclick="toggleDashEdit()">✎ Customize</button>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('charts')">
+          Full Analytics →
+        </button>
+      </div>
     </div>
+    <div id="dash-customize-panel" style="display:none"></div>
 
     ${revengeAlert}
 
@@ -196,6 +204,7 @@ async function renderDashboard() {
   // Async data loaders
   _loadDashWatchlistCount();
   _loadDashBudget();
+  initDashCustomize();
   _loadDashPredictions();
 }
 

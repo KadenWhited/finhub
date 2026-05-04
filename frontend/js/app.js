@@ -6,6 +6,8 @@ fetch('/api/auth/check')
     if (!d.authenticated) window.location.href = '/login';
   });
 
+initNavCustomize();
+
 const pages = {
   dashboard: { render: renderDashboard },
   trades: { render: renderTrades },
@@ -39,10 +41,6 @@ function navigateTo(page) {
   // Show target
   document.getElementById(`page-${page}`).classList.add('active');
 
-  // Update sidebar nav
-  document.querySelectorAll('.nav-link').forEach(a => {
-    a.classList.toggle('active', a.dataset.page === page);
-  });
   // Update mobile nav
   document.querySelectorAll('.mob-link').forEach(a => {
     a.classList.toggle('active', a.dataset.page === page);
@@ -72,14 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
   overlay.id = 'sidebar-overlay';
   document.body.appendChild(overlay);
 
-  // Nav clicks
-  document.querySelectorAll('.nav-link, .mob-link').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      navigateTo(link.dataset.page);
-    });
-  });
-
   // Hamburger
   const ham = document.getElementById('hamburger');
   ham.addEventListener('click', () => {
@@ -101,7 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') closeModal();
   });
 
+  async function loadAppVersion() {
+    try {
+      const data = await api.get('/version');
+      const el = document.getElementById('app-version');
+      if (el) el.textContent = `v${data.version}`;
+    } catch (e) {}
+  }
+
   // Initial page
   renderDashboard();
   initPWA();
+  loadAppVersion();
 });

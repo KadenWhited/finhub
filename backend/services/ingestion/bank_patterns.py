@@ -421,7 +421,6 @@ def match_pattern(sender: str, subject: str) -> BankPattern | None:
             return pattern
 
         if sender_is_gmail and subject_ok and subject_only_match is None:
-            print(f"  -> subject_only_match set to {pattern.name}")
             subject_only_match = pattern
 
 

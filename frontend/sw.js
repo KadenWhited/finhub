@@ -9,7 +9,7 @@
  *  - Background sync for queued API calls
  */
 
-const CACHE_NAME    = 'moneyright-v2';
+const CACHE_NAME    = 'moneyright-v1.5.3';
 const SYNC_TAG      = 'finhub-sync';
 const PUSH_TAG      = 'finhub-alert';
 

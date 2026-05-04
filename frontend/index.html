@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/css/stage5.css">
   <link rel="stylesheet" href="/css/alerts.css">
   <link rel="stylesheet" href="/css/news-enhanced.css">
+  <link rel="stylesheet" href="/css/customize.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,60 +34,11 @@
         <span class="logo-text">FINHUB</span>
       </div>
       <ul class="nav-links">
-        <li><a href="#" data-page="dashboard" class="nav-link active">
-          <span class="nav-icon">◈</span><span class="nav-label">Dashboard</span>
-        </a></li>
-        <li><a href="#" data-page="checkbook" class="nav-link">
-          <span class="nav-icon">◻</span><span class="nav-label">Checkbook</span>
-        </a></li>
-        <li><a href="#" data-page="credit" class="nav-link">
-          <span class="nav-icon">▣</span><span class="nav-label">Credit</span>
-        </a></li>
-        <li><a href="#" data-page="budget" class="nav-link">
-          <span class="nav-icon">◈</span><span class="nav-label">Budget</span>
-        </a></li>
-                <li><a href="#" data-page="trades" class="nav-link">
-          <span class="nav-icon">◇</span><span class="nav-label">Trade Journal</span>
-        </a></li>
-        <li><a href="#" data-page="market" class="nav-link">
-          <span class="nav-icon">◉</span><span class="nav-label">Market</span>
-        </a></li>
-        <li><a href="#" data-page="stocks" class="nav-link">
-          <span class="nav-icon">◈</span><span class="nav-label">Stocks</span>
-        </a></li>
-        <li><a href="#" data-page="charts" class="nav-link">
-          <span class="nav-icon">╱</span><span class="nav-label">Analytics</span>
-        </a></li>
-        <li><a href="#" data-page="gambling" class="nav-link">
-          <span class="nav-icon">◈</span><span class="nav-label">Gambling</span>
-        </a></li>
-        <li><a href="#" data-page="predictions" class="nav-link">
-          <span class="nav-icon">◈</span>
-          <span class="nav-label">Predictions</span>
-        </a></li>
-        <li><a href="#" data-page="news" class="nav-link">
-          <span class="nav-icon">≋</span><span class="nav-label">News</span>
-        </a></li>
-        <li><a href="#" data-page="tools" class="nav-link">
-          <span class="nav-icon">⊕</span><span class="nav-label">Tools</span>
-        </a></li>
-        <li><a href="#" data-page="backtester" class="nav-link">
-          <span class="nav-icon">◈</span><span class="nav-label">Backtester</span>
-        </a></li>
-        <li><a href="#" data-page="connections" class="nav-link">
-          <span class="nav-icon">⬡</span>
-          <span class="nav-label">Connections</span>
-        </a></li>
-        <li><a href="#" data-page="settings" class="nav-link">
-          <span class="nav-icon">⊙</span><span class="nav-label">Settings</span>
-        </a></li>
-        <li><a href="#" data-page="notes" class="nav-link">
-          <span class="nav-icon">≡</span><span class="nav-label">Journal</span>
-        </a></li>
       </ul>
       <div class="sidebar-footer">
-        <span class="version">v1.5.2</span>
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%" onclick="logOut()">Sign Out</button>
+        <span class="version" id="app-version"></span>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%"
+          onclick="logOut()">Sign Out</button>
       </div>
     </nav>
 
@@ -178,7 +130,8 @@
   <script src="/js/modules/stocks.js"></script>
   <script src="/js/modules/alert-settings.js"></script>
   <script src="/js/modules/connections.js"></script>
-
+  <script src="/js/nav-customize.js"></script>
+  <script src="/js/dash-customize.js"></script>
   <script>window.FINHUB_VAPID_PUBLIC_KEY = 'BJU7mCXaei0NJBtgk42uELc2l38LTteWPhvFHx0STlLFSrZ1i1gVWD1bDOrgWPuitdJ8ZF7u9J-0swabBFaeTTQ=';</script>
 
   <script src="/js/pwa.js"></script>

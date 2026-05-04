@@ -1,7 +1,17 @@
 import sqlite3
 import os
+import sys
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'finance_hub.db')
+def _get_base_dir():
+    """Returns the correct base directory whether running normally or as .exe"""
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        return os.path.dirname(sys.executable)
+    else:
+        # Running normally
+        return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+DB_PATH = os.path.join(_get_base_dir(), 'data', 'finance_hub.db')
 
 def get_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

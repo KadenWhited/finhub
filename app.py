@@ -59,6 +59,14 @@ if not secret:
         raise RuntimeError('SECRET_KEY must be set in .env before running in production')
 app.secret_key = secret
 
+def _read_version() -> str:
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'version.txt')) as f:
+            return f.read().strip()
+    except Exception:
+        return '1.0.0'
+
+APP_VERSION = _read_version()
 
 # ── Blueprints ────────────────────────────────────────────────────────────────
 app.register_blueprint(auth_bp,         url_prefix='/api/auth')
@@ -112,6 +120,10 @@ def security_headers(response):
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
+# ──   App Version    ──────────────────────────────────────────────────────────
+@app.route('/api/version')
+def get_version():
+    return jsonify({'version': APP_VERSION})
 
 # ── Static routes ─────────────────────────────────────────────────────────────
 @app.route('/')

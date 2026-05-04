@@ -1,0 +1,136 @@
+/* ============================================================
+   NAV CUSTOMIZATION + DASHBOARD WIDGET EDITOR
+   Add to main.css
+   ============================================================ */
+
+/* ── NAV EDIT MODE ───────────────────────────────────────── */
+
+/* Draggable nav items */
+li.nav-draggable {
+  cursor: grab;
+  position: relative;
+}
+li.nav-draggable:active {
+  cursor: grabbing;
+}
+li.nav-draggable .nav-link {
+  border-left: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+li.nav-draggable:hover .nav-link {
+  border-left-color: var(--accent);
+  background: var(--bg-3);
+}
+
+/* Locked nav items in edit mode */
+li.nav-locked .nav-link {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Drop target highlight */
+li.nav-drag-over .nav-link {
+  border-left: 2px solid var(--accent);
+  background: rgba(124,106,247,0.1);
+}
+
+/* Drag handle icon */
+.nav-drag-handle {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--text-3);
+  line-height: 1;
+  cursor: grab;
+}
+
+/* Edit mode — slight pulse on draggable items */
+li.nav-draggable .nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0.4;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── NAV EDIT BUTTON ─────────────────────────────────────── */
+#nav-edit-btn {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  transition: opacity 0.15s, color 0.15s;
+}
+#nav-edit-btn:hover {
+  opacity: 1;
+}
+
+/* ── VISIBILITY PANEL ────────────────────────────────────── */
+#nav-visibility-panel {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#nav-visibility-panel::-webkit-scrollbar { width: 4px; }
+#nav-visibility-panel::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* ── DASHBOARD EDIT MODE ─────────────────────────────────── */
+
+/* Customize button in page header */
+#dash-edit-btn {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  transition: color 0.15s;
+}
+
+/* Widget pill toggle panel */
+#dash-customize-panel {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Editable module card */
+.dash-module-editable {
+  cursor: grab !important;
+  border: 1px dashed var(--accent) !important;
+  position: relative;
+}
+.dash-module-editable::after {
+  content: '⠿ drag';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.6rem;
+  color: var(--accent);
+  opacity: 0.6;
+  letter-spacing: 0.06em;
+}
+.dash-module-editable:active {
+  cursor: grabbing !important;
+}
+
+/* Drop target on dashboard */
+.dash-module.dash-drag-over {
+  border: 1px solid var(--accent) !important;
+  background: rgba(124,106,247,0.06) !important;
+  transform: scale(1.01);
+}
+
+/* Fade in animation for panel */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav-drag-handle { display: none; } /* Touch drag handles via long-press */
+  .dash-module-editable::after { display: none; }
+  #dash-customize-panel { gap: 6px; }
+}
